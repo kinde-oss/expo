@@ -1,0 +1,54 @@
+{
+  "name": "@kinde/expo",
+  "private": false,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "version": "0.1.0-92",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "prepare": "npm run build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "prettier --check .",
+    "lint:fix": "prettier --write ."
+  },
+  "module": "dist/kinde-expo.cjs",
+  "main": "dist/kinde-expo.cjs",
+  "types": "dist/main.d.ts",
+  "devDependencies": {
+    "@types/base-64": "^1.0.2",
+    "@types/node": "^20.12.7",
+    "@types/react": "^18.3.3",
+    "@vitest/coverage-v8": "^1.5.0",
+    "expo-constants": "^16.0.2",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.8",
+    "vite-plugin-dts": "^3.8.1",
+    "vitest": "^1.5.0"
+  },
+  "dependencies": {
+    "@kinde/js-utils": "0.1.0-7",
+    "@kinde/jwt-decoder": "^0.2.0",
+    "@kinde/jwt-validator": "^0.3.0-3",
+    "@vitejs/plugin-react": "^4.3.1",
+    "base-64": "^1.0.0",
+    "dotenv": "^16.4.5",
+    "expo-auth-session": "^5.5.2",
+    "expo-crypto": "^13.0.2",
+    "expo-linking": "^6.3.1",
+    "expo-secure-store": "^13.0.2"
+  },
+  "peerDependencies": {
+    "expo": "*",
+    "react-native": "^0.74.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "packageManager": "pnpm@8.14.1+sha256.2df78e65d433d7693b9d3fbdaf431b2d96bb4f96a2ffecd51a50efe16e50a6a8"
+}
