@@ -1,28 +1,21 @@
 import {
   makeRedirectUri,
   exchangeCodeAsync,
-  revokeAsync,
-  TokenTypeHint,
   DiscoveryDocument,
   useAutoDiscovery,
   AuthRequest,
 } from "expo-auth-session";
 import { validateToken } from "@kinde/jwt-validator";
-import { openAuthSessionAsync } from "expo-web-browser";
 import { setItemAsync, getItemAsync, deleteItemAsync } from "expo-secure-store";
 import {
   type LoginMethodParams,
-//   generateAuthUrl,
-//   IssuerRouteTypes,
-//   type LoginOptions,
-  mapLoginMethodParamsForUrl
+  mapLoginMethodParamsForUrl,
 } from "@kinde/js-utils";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
-
-import {maybeCompleteAuthSession} from "expo-web-browser";
 import { DEFAULT_TOKEN_SCOPES } from "./constants";
+import { polyfillWebCrypto } from "expo-standard-web-crypto";
 
-maybeCompleteAuthSession()
+polyfillWebCrypto();
 
 export type LoginSuccessResponse = {
   success: true;
@@ -85,7 +78,9 @@ export function useKindeAuth() {
 
   const domain = process.env.EXPO_PUBLIC_KINDE_DOMAIN!;
   const clientId = process.env.EXPO_PUBLIC_KINDE_CLIENT_ID!;
-  const scopes = process.env.EXPO_PUBLIC_KINDE_SCOPES?.split(" ") || DEFAULT_TOKEN_SCOPES.split(" ");
+  const scopes =
+    process.env.EXPO_PUBLIC_KINDE_SCOPES?.split(" ") ||
+    DEFAULT_TOKEN_SCOPES.split(" ");
 
   const discovery: DiscoveryDocument = {
     ...useAutoDiscovery(domain),
@@ -96,10 +91,10 @@ export function useKindeAuth() {
     options: Partial<LoginMethodParams> = {},
   ): Promise<LoginResponse> => {
     const request = new AuthRequest({
-        clientId,
-        redirectUri: makeRedirectUri(),
-        scopes: scopes,
-        extraParams: mapLoginMethodParamsForUrl(options)
+      clientId,
+      redirectUri: makeRedirectUri(),
+      scopes: scopes,
+      extraParams: mapLoginMethodParamsForUrl(options),
     });
 
     if (discovery) {
@@ -151,35 +146,35 @@ export function useKindeAuth() {
         return { success: false, errorMessage: err.message };
       }
     }
-    return { success: false, errorMessage: "No discovery document"};
+    return { success: false, errorMessage: "No discovery document" };
   };
 
   async function logout(): Promise<LogoutResult> {
-    const redirectUri = makeRedirectUri({
-      scheme: "myapp",
-      path: "",
-    });
-    const accesstoken = await getStorage(StorageKeys.accessToken);
+    // const redirectUri = makeRedirectUri({
+    //   scheme: "myapp",
+    //   path: "",
+    // });
+    // const accesstoken = await getStorage(StorageKeys.accessToken);
 
-    if (accesstoken && discovery) {
-      revokeAsync(
-        { token: accesstoken!, tokenTypeHint: TokenTypeHint.AccessToken },
-        discovery,
-      )
-        .then(async () => {
-          await openAuthSessionAsync(
-            `${discovery.endSessionEndpoint}?redirect=${redirectUri}`,
-          );
-          await setStorage(StorageKeys.accessToken, null);
-          await setStorage(StorageKeys.idToken, null);
-          return { success: true };
-        })
-        .catch((err) => {
-          console.error(err);
-          return { success: false };
-        });
-    }
-    return { success: true };
+    // if (accesstoken && discovery) {
+    //   revokeAsync(
+    //     { token: accesstoken!, tokenTypeHint: TokenTypeHint.AccessToken },
+    //     discovery,
+    //   )
+    //     .then(async () => {
+    //       await openAuthSessionAsync(
+    //         `${discovery.endSessionEndpoint}?redirect=${redirectUri}`,
+    //       );
+    //       await setStorage(StorageKeys.accessToken, null);
+    //       await setStorage(StorageKeys.idToken, null);
+    //       return { success: true };
+    //     })
+    //     .catch((err) => {
+    //       console.error(err);
+    //       return { success: false };
+    //     });
+    // }
+    // return { success: true };
   }
 
   async function getAccessToken(): Promise<string | null> {
@@ -190,10 +185,12 @@ export function useKindeAuth() {
     return getStorage(StorageKeys.idToken);
   }
 
-  async function getDecodedToken(tokenType: "accessToken" | "idToken" = "accessToken") {
+  async function getDecodedToken(
+    tokenType: "accessToken" | "idToken" = "accessToken",
+  ) {
     const token =
       tokenType === "accessToken" ? await getAccessToken() : await getIdToken();
-      
+
     if (!token) {
       return null;
     }

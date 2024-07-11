@@ -23,9 +23,15 @@ dependencies:
   expo-auth-session:
     specifier: ^5.5.2
     version: 5.5.2(expo@51.0.18)
+  expo-crypto:
+    specifier: ^13.0.2
+    version: 13.0.2(expo@51.0.18)
   expo-secure-store:
     specifier: ^13.0.2
     version: 13.0.2(expo@51.0.18)
+  expo-standard-web-crypto:
+    specifier: ^1.8.1
+    version: 1.8.1(expo-crypto@13.0.2)
   expo-web-browser:
     specifier: ^13.0.3
     version: 13.0.3(expo@51.0.18)
@@ -4707,6 +4713,18 @@ packages:
       expo: '*'
     dependencies:
       expo: 51.0.18(@babel/core@7.24.7)(@babel/preset-env@7.24.7)
+    dev: false
+
+  /expo-standard-web-crypto@1.8.1(expo-crypto@13.0.2):
+    resolution: {integrity: sha512-0T/FT45gpjRFI9LZdUAdrCLyBg+6lf1rEHFsEm8EryFxVnQ5eKknpGgx7hd6kLytGVIWWL4zc+yFSHrp2LVqXw==}
+    peerDependencies:
+      expo-crypto: ^13.0.0
+      expo-random: '*'
+    peerDependenciesMeta:
+      expo-random:
+        optional: true
+    dependencies:
+      expo-crypto: 13.0.2(expo@51.0.18)
     dev: false
 
   /expo-web-browser@13.0.3(expo@51.0.18):

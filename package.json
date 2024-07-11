@@ -5,7 +5,7 @@
   "files": [
     "dist"
   ],
-  "version": "0.8.0",
+  "version": "0.1.0-3",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -36,7 +36,9 @@
     "@vitejs/plugin-react": "^4.3.1",
     "dotenv": "^16.4.5",
     "expo-auth-session": "^5.5.2",
+    "expo-crypto": "^13.0.2",
     "expo-secure-store": "^13.0.2",
+    "expo-standard-web-crypto": "^1.8.1",
     "expo-web-browser": "^13.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.3.1",
