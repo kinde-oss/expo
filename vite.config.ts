@@ -4,6 +4,9 @@ import dts from "vite-plugin-dts";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
+  define: {
+    global: "window",
+  },
   build: {
     lib: {
       entry: resolve(__dirname, "lib/main.ts"),

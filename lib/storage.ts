@@ -1,4 +1,4 @@
-import { deleteItemAsync, setItemAsync } from "expo-secure-store";
+import { deleteItemAsync, getItemAsync, setItemAsync } from "expo-secure-store";
 
 export enum StorageKeys {
   accessToken,
@@ -21,4 +21,16 @@ export const setStorage = async (key: StorageKeys, value: string | null) => {
   } else {
     await setItemAsync(`${key}-0`, value);
   }
+};
+
+export const getStorage = async (key: StorageKeys): Promise<string | null> => {
+  const chunks = [];
+  let index = 0;
+  let chunk = await getItemAsync(`${key}-${index}`);
+  while (chunk) {
+    chunks.push(chunk);
+    index++;
+    chunk = await getItemAsync(`${key}-${index}`);
+  }
+  return chunks.join("");
 };

@@ -1,22 +1,24 @@
-import { createContext, useEffect, useState } from "react";
-import Constants from "expo-constants";
-import {
-  makeRedirectUri,
-  AuthRequest,
-  exchangeCodeAsync,
-  DiscoveryDocument,
-  CodeChallengeMethod,
-} from "expo-auth-session";
-import { validateToken } from "@kinde/jwt-validator";
-import { setStorage, StorageKeys } from "./storage";
-// import { useKindeAuth } from "./useKindeAuth";
 import { LoginMethodParams, mapLoginMethodParamsForUrl } from "@kinde/js-utils";
-import { LoginResponse } from "./types";
+import { validateToken } from "@kinde/jwt-validator";
+import {
+  AuthRequest,
+  CodeChallengeMethod,
+  DiscoveryDocument,
+  exchangeCodeAsync,
+  makeRedirectUri,
+  revokeAsync,
+  TokenTypeHint,
+} from "expo-auth-session";
+import Constants from "expo-constants";
+import { openAuthSessionAsync } from "expo-web-browser";
+import { createContext, useEffect, useState } from "react";
 import { DEFAULT_TOKEN_SCOPES } from "./constants";
+import { getStorage, setStorage, StorageKeys } from "./storage";
+import { LoginResponse, LogoutResult } from "./types";
 import { KindeAuthHook } from "./useKindeAuth";
 
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
-  undefined,
+  undefined
 );
 
 export const KindeAuthProvider = ({
@@ -75,17 +77,8 @@ export const KindeAuthProvider = ({
     userInfoEndpoint: `${domain}/oauth2/v2/user_profile`,
   };
 
-  // useEffect(() => {
-  //     Linking.parseInitialURLAsync().then(setInitialUrl);
-  // }, []);
-
-  // const redirectUri = initialUrl
-  //     ? makeRedirectUri({ native: Constants.isDevice, scheme: initialUrl.split("://")[0] })
-  //     : undefined;
-  console.log(window, window?.location, window?.location?.origin);
-
   const login = async (
-    options: Partial<LoginMethodParams> = {},
+    options: Partial<LoginMethodParams> = {}
   ): Promise<LoginResponse> => {
     if (!redirectUri) {
       return {
@@ -116,7 +109,7 @@ export const KindeAuthProvider = ({
                 : undefined,
               redirectUri,
             },
-            discovery,
+            discovery
           );
 
           if (
@@ -127,7 +120,7 @@ export const KindeAuthProvider = ({
           ) {
             await setStorage(
               StorageKeys.accessToken,
-              exchangeCodeResponse.accessToken,
+              exchangeCodeResponse.accessToken
             );
           }
           if (
@@ -153,9 +146,37 @@ export const KindeAuthProvider = ({
     return { success: false, errorMessage: "No discovery document" };
   };
 
+  async function logout(): Promise<LogoutResult> {
+    const redirectUri = makeRedirectUri({
+      scheme: "myapp",
+      path: "",
+    });
+    const accesstoken = await getStorage(StorageKeys.accessToken);
+
+    if (accesstoken && discovery) {
+      revokeAsync(
+        { token: accesstoken!, tokenTypeHint: TokenTypeHint.AccessToken },
+        discovery
+      )
+        .then(async () => {
+          await openAuthSessionAsync(
+            `${discovery.endSessionEndpoint}?redirect=${redirectUri}`
+          );
+          await setStorage(StorageKeys.accessToken, null);
+          await setStorage(StorageKeys.idToken, null);
+          return { success: true };
+        })
+        .catch((err) => {
+          console.error(err);
+          return { success: false };
+        });
+    }
+    return { success: true };
+  }
+
   const value = {
     login,
-    // logout,
+    logout,
     // ... your other exposed methods ...
   };
 

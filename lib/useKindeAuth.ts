@@ -1,11 +1,12 @@
 import { useContext } from "react";
-import { LoginResponse } from "./types";
+import { LoginResponse, LogoutResult } from "./types";
 import { LoginMethodParams } from "@kinde/js-utils";
 import { KindeAuthContext } from "./KindeAuthProvider";
 
 // Define a more specific type for login options
 export interface KindeAuthHook {
   login: (options: Partial<LoginMethodParams>) => Promise<LoginResponse>;
+  logout: () => Promise<LogoutResult>;
   // Define other functions and their types here
 }
 
