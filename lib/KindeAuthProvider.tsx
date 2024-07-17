@@ -1,5 +1,5 @@
 import { LoginMethodParams, mapLoginMethodParamsForUrl } from "@kinde/js-utils";
-import { validateToken } from "@kinde/jwt-validator";
+// import { validateToken } from "@kinde/jwt-validator";
 import {
   AuthRequest,
   CodeChallengeMethod,
@@ -18,7 +18,7 @@ import { LoginResponse, LogoutResult } from "./types";
 import { KindeAuthHook } from "./useKindeAuth";
 
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
-  undefined
+  undefined,
 );
 
 export const KindeAuthProvider = ({
@@ -78,7 +78,7 @@ export const KindeAuthProvider = ({
   };
 
   const login = async (
-    options: Partial<LoginMethodParams> = {}
+    options: Partial<LoginMethodParams> = {},
   ): Promise<LoginResponse> => {
     if (!redirectUri) {
       return {
@@ -109,29 +109,29 @@ export const KindeAuthProvider = ({
                 : undefined,
               redirectUri,
             },
-            discovery
+            discovery,
           );
 
-          if (
-            await validateToken({
-              token: exchangeCodeResponse.accessToken,
-              domain: domain,
-            })
-          ) {
-            await setStorage(
-              StorageKeys.accessToken,
-              exchangeCodeResponse.accessToken
-            );
-          }
-          if (
-            exchangeCodeResponse.idToken &&
-            (await validateToken({
-              token: exchangeCodeResponse.idToken,
-              domain: domain,
-            }))
-          ) {
-            await setStorage(StorageKeys.idToken, exchangeCodeResponse.idToken);
-          }
+          // if (
+          //   await validateToken({
+          //     token: exchangeCodeResponse.accessToken,
+          //     domain: domain,
+          //   })
+          // ) {
+          await setStorage(
+            StorageKeys.accessToken,
+            exchangeCodeResponse.accessToken,
+          );
+          // }
+          // if (
+          //   exchangeCodeResponse.idToken &&
+          //   (await validateToken({
+          //     token: exchangeCodeResponse.idToken,
+          //     domain: domain,
+          //   }))
+          // ) {
+          await setStorage(StorageKeys.idToken, exchangeCodeResponse.idToken!);
+          // }
           return {
             success: true,
             accessToken: exchangeCodeResponse.accessToken,
@@ -156,11 +156,11 @@ export const KindeAuthProvider = ({
     if (accesstoken && discovery) {
       revokeAsync(
         { token: accesstoken!, tokenTypeHint: TokenTypeHint.AccessToken },
-        discovery
+        discovery,
       )
         .then(async () => {
           await openAuthSessionAsync(
-            `${discovery.endSessionEndpoint}?redirect=${redirectUri}`
+            `${discovery.endSessionEndpoint}?redirect=${redirectUri}`,
           );
           await setStorage(StorageKeys.accessToken, null);
           await setStorage(StorageKeys.idToken, null);

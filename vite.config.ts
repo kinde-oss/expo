@@ -16,13 +16,14 @@ export default defineConfig({
     },
     target: "es2020", // Or use a more specific target based on your needs
     outDir: resolve(__dirname, "../dist"), // Safer path resolution
+
     rollupOptions: {
-      // Add polyfills if you need to support older browsers
-      external: ["react", "react-dom"], // Treat these as external dependencies
+      external: ["react", "react/jsx-runtime", "react-dom"],
       output: {
         globals: {
-          react: "React",
+          react: "react",
           "react-dom": "ReactDOM",
+          "react/jsx-runtime": "react/jsx-runtime",
         },
       },
     },
