@@ -9,16 +9,16 @@ import {
   revokeAsync,
   TokenTypeHint,
 } from "expo-auth-session";
-import Constants from "expo-constants";
 import { openAuthSessionAsync } from "expo-web-browser";
 import { createContext, useEffect, useState } from "react";
 import { DEFAULT_TOKEN_SCOPES } from "./constants";
 import { getStorage, setStorage, StorageKeys } from "./storage";
 import { LoginResponse, LogoutResult } from "./types";
 import { KindeAuthHook } from "./useKindeAuth";
+import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
-  undefined,
+  undefined
 );
 
 export const KindeAuthProvider = ({
@@ -28,7 +28,7 @@ export const KindeAuthProvider = ({
 }) => {
   const [redirectUri, setRedirectUri] = useState<string | undefined>();
   useEffect(() => {
-    setRedirectUri(makeRedirectUri({ native: Constants.isDevice }));
+    setRedirectUri(makeRedirectUri());
   }, []);
 
   const domain = process.env.EXPO_PUBLIC_KINDE_DOMAIN!;
@@ -78,7 +78,7 @@ export const KindeAuthProvider = ({
   };
 
   const login = async (
-    options: Partial<LoginMethodParams> = {},
+    options: Partial<LoginMethodParams> = {}
   ): Promise<LoginResponse> => {
     if (!redirectUri) {
       return {
@@ -109,7 +109,7 @@ export const KindeAuthProvider = ({
                 : undefined,
               redirectUri,
             },
-            discovery,
+            discovery
           );
 
           // if (
@@ -120,7 +120,7 @@ export const KindeAuthProvider = ({
           // ) {
           await setStorage(
             StorageKeys.accessToken,
-            exchangeCodeResponse.accessToken,
+            exchangeCodeResponse.accessToken
           );
           // }
           // if (
@@ -147,20 +147,16 @@ export const KindeAuthProvider = ({
   };
 
   async function logout(): Promise<LogoutResult> {
-    const redirectUri = makeRedirectUri({
-      scheme: "myapp",
-      path: "",
-    });
     const accesstoken = await getStorage(StorageKeys.accessToken);
 
     if (accesstoken && discovery) {
       revokeAsync(
         { token: accesstoken!, tokenTypeHint: TokenTypeHint.AccessToken },
-        discovery,
+        discovery
       )
         .then(async () => {
           await openAuthSessionAsync(
-            `${discovery.endSessionEndpoint}?redirect=${redirectUri}`,
+            `${discovery.endSessionEndpoint}?redirect=${redirectUri}`
           );
           await setStorage(StorageKeys.accessToken, null);
           await setStorage(StorageKeys.idToken, null);
@@ -174,9 +170,102 @@ export const KindeAuthProvider = ({
     return { success: true };
   }
 
+  async function getAccessToken(): Promise<string | null> {
+    return getStorage(StorageKeys.accessToken);
+  }
+
+  async function getIdToken(): Promise<string | null> {
+    return getStorage(StorageKeys.idToken);
+  }
+
+  async function getDecodedToken(
+    tokenType: "accessToken" | "idToken" = "accessToken"
+  ) {
+    const token =
+      tokenType === "accessToken" ? await getAccessToken() : await getIdToken();
+
+    if (!token) {
+      return null;
+    }
+    return jwtDecoder<
+      JWTDecoded & {
+        permissions: string[];
+        org_code: string;
+      }
+    >((await getAccessToken())!);
+  }
+
+  async function getPermission(
+    permission: string
+  ): Promise<{ orgCode: string | null; isGranted: boolean }> {
+    const token = await getDecodedToken();
+
+    if (!token) {
+      return {
+        orgCode: null,
+        isGranted: false,
+      };
+    }
+
+    const permissions = token.permissions || [];
+    return {
+      orgCode: token.org_code,
+      isGranted: !!permissions.includes(permission),
+    };
+  }
+
+  async function getPermissions(): Promise<{
+    orgCode: string | null;
+    permissions: string[];
+  }> {
+    const token = await getDecodedToken();
+
+    if (!token) {
+      return {
+        orgCode: null,
+        permissions: [],
+      };
+    }
+
+    const permissions = token.permissions || [];
+    return {
+      orgCode: token.org_code,
+      permissions,
+    };
+  }
+
+  async function getClaims(): Promise<JWTDecoded | null> {
+    const token = await getAccessToken();
+    if (!token) {
+      return null;
+    }
+    return jwtDecoder(token);
+  }
+
+  async function getClaim(
+    keyName: keyof JWTDecoded
+  ): Promise<string | number | string[] | null> {
+    const token = await getAccessToken();
+    if (!token) {
+      return null;
+    }
+    const claims = jwtDecoder(token);
+    if (!claims) {
+      return null;
+    }
+    return claims[keyName];
+  }
+
   const value = {
     login,
     logout,
+    getAccessToken,
+    getIdToken,
+    getDecodedToken,
+    getPermission,
+    getPermissions,
+    getClaims,
+    getClaim,
     // ... your other exposed methods ...
   };
 

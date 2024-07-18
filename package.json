@@ -5,7 +5,7 @@
   "files": [
     "dist"
   ],
-  "version": "0.1.0-31",
+  "version": "0.1.0-45",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -38,11 +38,11 @@
     "dotenv": "^16.4.5",
     "expo-auth-session": "^5.5.2",
     "expo-crypto": "^13.0.2",
-    "expo-secure-store": "^13.0.2",
-    "react-native-web": "^0.19.12"
+    "expo-secure-store": "^13.0.2"
   },
   "peerDependencies": {
-    "expo": "*"
+    "expo": "*",
+    "react-native": "^0.74.3"
   },
   "publishConfig": {
     "access": "public"

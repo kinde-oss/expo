@@ -15,10 +15,10 @@ export default defineConfig({
       fileName: "kinde-expo",
     },
     target: "es2020", // Or use a more specific target based on your needs
-    outDir: resolve(__dirname, "../dist"), // Safer path resolution
+    outDir: resolve(__dirname, "./dist"), // Safer path resolution
 
     rollupOptions: {
-      external: ["react", "react/jsx-runtime", "react-dom"],
+      external: ["react", "react/jsx-runtime", "react-dom", "react-native"],
       output: {
         globals: {
           react: "react",
@@ -37,7 +37,7 @@ export default defineConfig({
     extensions: [".web.js", ".js", ".ts", ".tsx", ".jsx"],
   },
   plugins: [
-    dts({ insertTypesEntry: true, outDir: resolve(__dirname, "../dist") }),
+    dts({ insertTypesEntry: true, outDir: resolve(__dirname, "./dist") }),
     react(),
   ],
 });
