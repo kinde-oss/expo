@@ -5,7 +5,7 @@
   "files": [
     "dist"
   ],
-  "version": "0.1.0-45",
+  "version": "0.1.0-61",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -38,6 +38,7 @@
     "dotenv": "^16.4.5",
     "expo-auth-session": "^5.5.2",
     "expo-crypto": "^13.0.2",
+    "expo-linking": "^6.3.1",
     "expo-secure-store": "^13.0.2"
   },
   "peerDependencies": {

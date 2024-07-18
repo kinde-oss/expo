@@ -1,11 +1,11 @@
 import { LoginMethodParams, mapLoginMethodParamsForUrl } from "@kinde/js-utils";
-// import { validateToken } from "@kinde/jwt-validator";
+import { validateToken } from "@kinde/jwt-validator";
 import {
   AuthRequest,
-  CodeChallengeMethod,
   DiscoveryDocument,
   exchangeCodeAsync,
   makeRedirectUri,
+  useAutoDiscovery,
   revokeAsync,
   TokenTypeHint,
 } from "expo-auth-session";
@@ -16,9 +16,10 @@ import { getStorage, setStorage, StorageKeys } from "./storage";
 import { LoginResponse, LogoutResult } from "./types";
 import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
-
+import Constants from "expo-constants";
+// import { createURL } from "expo-linking";
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
-  undefined
+  undefined,
 );
 
 export const KindeAuthProvider = ({
@@ -28,57 +29,30 @@ export const KindeAuthProvider = ({
 }) => {
   const [redirectUri, setRedirectUri] = useState<string | undefined>();
   useEffect(() => {
-    setRedirectUri(makeRedirectUri());
+    // http://
+    // console.log("use effect");
+    // const currentScheme = createURL("/");
+
+    // console.log(currentScheme);
+    // if (window.origin) {
+    console.log("set RedirectUri");
+    setRedirectUri(makeRedirectUri({ native: Constants.isDevice }));
+    // }
   }, []);
+  // const redirectUri = "exp://192.168.86.49:8081";
 
   const domain = process.env.EXPO_PUBLIC_KINDE_DOMAIN!;
   const clientId = process.env.EXPO_PUBLIC_KINDE_CLIENT_ID!;
   const scopes =
     process.env.EXPO_PUBLIC_KINDE_SCOPES?.split(" ") ||
     DEFAULT_TOKEN_SCOPES.split(" ");
-  const discovery: DiscoveryDocument = {
-    authorizationEndpoint: `${domain}/oauth2/auth`,
-    discoveryDocument: {
-      authorization_endpoint: `${domain}/oauth2/auth`,
-      claims_supported: ["aud", "exp", "iat", "iss", "sub"],
-      code_challenge_methods_supported: [CodeChallengeMethod.S256],
-      end_session_endpoint: `${domain}/logout`,
-      id_token_signing_alg_values_supported: ["RS256"],
-      introspection_endpoint: `${domain}/oauth2/introspect`,
-      issuer: `${domain}`,
-      jwks_uri: `${domain}/.well-known/jwks`,
-      request_uri_parameter_supported: false,
-      response_modes_supported: ["form_post", "query", "fragment"],
-      response_types_supported: [
-        "code",
-        "token",
-        "id_token",
-        "code token",
-        "code id_token",
-        "id_token token",
-        "code id_token token",
-      ],
-      scopes_supported: [
-        "address",
-        "email",
-        "offline",
-        "openid",
-        "phone",
-        "profile",
-      ],
-      subject_types_supported: ["public"],
-      token_endpoint: `${domain}/oauth2/token`,
-      token_endpoint_auth_methods_supported: ["client_secret_post"],
-      userinfo_endpoint: `${domain}/oauth2/v2/user_profile`,
-    },
-    endSessionEndpoint: `${domain}/logout`,
-    registrationEndpoint: undefined,
-    tokenEndpoint: `${domain}/oauth2/token`,
-    userInfoEndpoint: `${domain}/oauth2/v2/user_profile`,
+  const discovery: DiscoveryDocument | null = {
+    ...useAutoDiscovery(domain),
+    revocationEndpoint: `${domain}/oauth2/revoke`,
   };
 
   const login = async (
-    options: Partial<LoginMethodParams> = {}
+    options: Partial<LoginMethodParams> = {},
   ): Promise<LoginResponse> => {
     if (!redirectUri) {
       return {
@@ -86,13 +60,14 @@ export const KindeAuthProvider = ({
         errorMessage: "This library only works on a mobile device",
       };
     }
-
     const request = new AuthRequest({
       clientId,
       redirectUri,
       scopes: scopes,
       extraParams: mapLoginMethodParamsForUrl(options),
     });
+
+    console.log("request", request);
 
     if (discovery) {
       try {
@@ -109,29 +84,32 @@ export const KindeAuthProvider = ({
                 : undefined,
               redirectUri,
             },
-            discovery
+            discovery,
           );
 
-          // if (
-          //   await validateToken({
-          //     token: exchangeCodeResponse.accessToken,
-          //     domain: domain,
-          //   })
-          // ) {
-          await setStorage(
-            StorageKeys.accessToken,
-            exchangeCodeResponse.accessToken
-          );
-          // }
-          // if (
-          //   exchangeCodeResponse.idToken &&
-          //   (await validateToken({
-          //     token: exchangeCodeResponse.idToken,
-          //     domain: domain,
-          //   }))
-          // ) {
-          await setStorage(StorageKeys.idToken, exchangeCodeResponse.idToken!);
-          // }
+          if (
+            await validateToken({
+              token: exchangeCodeResponse.accessToken,
+              domain: domain,
+            })
+          ) {
+            await setStorage(
+              StorageKeys.accessToken,
+              exchangeCodeResponse.accessToken,
+            );
+          }
+          if (
+            exchangeCodeResponse.idToken &&
+            (await validateToken({
+              token: exchangeCodeResponse.idToken,
+              domain: domain,
+            }))
+          ) {
+            await setStorage(
+              StorageKeys.idToken,
+              exchangeCodeResponse.idToken!,
+            );
+          }
           return {
             success: true,
             accessToken: exchangeCodeResponse.accessToken,
@@ -148,21 +126,24 @@ export const KindeAuthProvider = ({
 
   async function logout(): Promise<LogoutResult> {
     const accesstoken = await getStorage(StorageKeys.accessToken);
-
+    console.log("accesstoken", accesstoken);
+    console.log("discovery", discovery);
     if (accesstoken && discovery) {
       revokeAsync(
         { token: accesstoken!, tokenTypeHint: TokenTypeHint.AccessToken },
-        discovery
+        discovery,
       )
         .then(async () => {
+          console.log("logout success 1");
           await openAuthSessionAsync(
-            `${discovery.endSessionEndpoint}?redirect=${redirectUri}`
+            `${discovery.endSessionEndpoint}?redirect=${redirectUri}`,
           );
+          console.log("logout success");
           await setStorage(StorageKeys.accessToken, null);
           await setStorage(StorageKeys.idToken, null);
           return { success: true };
         })
-        .catch((err) => {
+        .catch((err: unknown) => {
           console.error(err);
           return { success: false };
         });
@@ -179,7 +160,7 @@ export const KindeAuthProvider = ({
   }
 
   async function getDecodedToken(
-    tokenType: "accessToken" | "idToken" = "accessToken"
+    tokenType: "accessToken" | "idToken" = "accessToken",
   ) {
     const token =
       tokenType === "accessToken" ? await getAccessToken() : await getIdToken();
@@ -196,7 +177,7 @@ export const KindeAuthProvider = ({
   }
 
   async function getPermission(
-    permission: string
+    permission: string,
   ): Promise<{ orgCode: string | null; isGranted: boolean }> {
     const token = await getDecodedToken();
 
@@ -243,7 +224,7 @@ export const KindeAuthProvider = ({
   }
 
   async function getClaim(
-    keyName: keyof JWTDecoded
+    keyName: keyof JWTDecoded,
   ): Promise<string | number | string[] | null> {
     const token = await getAccessToken();
     if (!token) {

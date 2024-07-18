@@ -18,7 +18,17 @@ export default defineConfig({
     outDir: resolve(__dirname, "./dist"), // Safer path resolution
 
     rollupOptions: {
-      external: ["react", "react/jsx-runtime", "react-dom", "react-native"],
+      external: [
+        "react",
+        "react/jsx-runtime",
+        "react-dom",
+        "react-native",
+        "expo-auth-session",
+        "expo-constants",
+        "expo-secure-store",
+        "expo-web-browser",
+        "@kinde/jwt-validator",
+      ],
       output: {
         globals: {
           react: "react",
