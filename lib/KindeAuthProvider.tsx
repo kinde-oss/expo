@@ -45,6 +45,11 @@ export const KindeAuthProvider = ({
     revocationEndpoint: `${domain}/oauth2/revoke`,
   };
 
+  /**
+   * Login method
+   * @param {Partial<LoginMethodParams>} options
+   * @returns {Promise<LoginResponse>}
+   */
   const login = async (
     options: Partial<LoginMethodParams> = {},
   ): Promise<LoginResponse> => {
@@ -126,6 +131,10 @@ export const KindeAuthProvider = ({
     return { success: false, errorMessage: "No discovery document" };
   };
 
+  /**
+   * logout method
+   * @returns {Promise<LogoutResult>}
+   */
   async function logout(): Promise<LogoutResult> {
     return new Promise(async (resolve) => {
       const accesstoken = await getStorage(StorageKeys.accessToken);
@@ -151,14 +160,27 @@ export const KindeAuthProvider = ({
     });
   }
 
+  /**
+   * Get current active access token, returns null if no token found
+   * @returns {Promise<string | null>}
+   */
   async function getAccessToken(): Promise<string | null> {
     return getStorage(StorageKeys.accessToken);
   }
 
+  /**
+   * Get current active it token, returns null if no token found
+   * @returns {Promise<string | null>}
+   */
   async function getIdToken(): Promise<string | null> {
     return getStorage(StorageKeys.idToken);
   }
 
+  /**
+   *
+   * @param tokenType Type of token to decode
+   * @returns { Promise<JWTDecoded | null> }
+   */
   async function getDecodedToken<
     T = JWTDecoded & {
       permissions: string[];

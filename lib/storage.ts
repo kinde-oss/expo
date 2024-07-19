@@ -6,6 +6,12 @@ export enum StorageKeys {
   state,
 }
 
+/**
+ * Sets item in the storage
+ * @param {StorageKeys} key Key to store the value
+ * @param {string} value value to store in the storage
+ * @returns {Promise<void>}
+ */
 export const setStorage = async (key: StorageKeys, value: string | null) => {
   if (!value) {
     let index = 0;
@@ -29,6 +35,11 @@ export const setStorage = async (key: StorageKeys, value: string | null) => {
   }
 };
 
+/**
+ * Get item from the storage
+ * @param {StorageKeys} key Key to retrieve
+ * @returns {Promise<string | null>}
+ */
 export const getStorage = async (key: StorageKeys): Promise<string | null> => {
   const chunks = [];
   let index = 0;
