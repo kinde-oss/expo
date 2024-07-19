@@ -1,16 +1,34 @@
 import { useContext } from "react";
-import { LoginResponse, LogoutResult } from "./types";
+import {
+  LoginResponse,
+  LogoutResult,
+  PermissionAccess,
+  Permissions,
+} from "./types";
 import { LoginMethodParams } from "@kinde/js-utils";
 import { KindeAuthContext } from "./KindeAuthProvider";
+import { JWTDecoded } from "@kinde/jwt-decoder";
 
-// Define a more specific type for login options
 export interface KindeAuthHook {
   login: (options: Partial<LoginMethodParams>) => Promise<LoginResponse>;
   logout: () => Promise<LogoutResult>;
-  // Define other functions and their types here
+  getAccessToken: () => Promise<string | null>;
+  getIdToken: () => Promise<string | null>;
+  getDecodedToken: () => Promise<
+    | (JWTDecoded & {
+        permissions: string[];
+        org_code: string;
+      })
+    | null
+  >;
+  getPermission: (permissionKey: string) => Promise<PermissionAccess>;
+  getPermissions: () => Promise<Permissions>;
+  getClaims: <T = JWTDecoded>() => Promise<T | null>;
+  getClaim: <T = JWTDecoded>(
+    keyName: keyof T,
+  ) => Promise<string | number | string[] | null>;
 }
 
-// Assuming KindeAuthContext is defined elsewhere and imported
 export const useKindeAuthContext = (): KindeAuthHook => {
   const context = useContext<KindeAuthHook | undefined>(KindeAuthContext);
   if (!context) {
@@ -19,7 +37,6 @@ export const useKindeAuthContext = (): KindeAuthHook => {
   return context;
 };
 
-// Export a wrapper function to maintain the original hook name
 export const useKindeAuth = () => {
   return useKindeAuthContext();
 };

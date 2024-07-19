@@ -8,8 +8,13 @@ export enum StorageKeys {
 
 export const setStorage = async (key: StorageKeys, value: string | null) => {
   if (!value) {
-    console.log("deleting", key);
-    await deleteItemAsync(key.toString());
+    let index = 0;
+    let chunk = await getItemAsync(`${key}-${index}`);
+    while (chunk) {
+      await deleteItemAsync(`${key}-${index}`);
+      index++;
+      chunk = await getItemAsync(`${key}-${index}`);
+    }
     return;
   }
   if (value.length > 2048) {
