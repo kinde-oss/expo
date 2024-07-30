@@ -5,7 +5,7 @@
   "files": [
     "dist"
   ],
-  "version": "0.1.0-63",
+  "version": "0.1.0-78",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -20,6 +20,7 @@
   "main": "dist/kinde-expo.cjs",
   "types": "dist/main.d.ts",
   "devDependencies": {
+    "@types/base-64": "^1.0.2",
     "@types/node": "^20.12.7",
     "@types/react": "^18.3.3",
     "@vitest/coverage-v8": "^1.5.0",
@@ -33,8 +34,9 @@
   "dependencies": {
     "@kinde/js-utils": "0.1.0-7",
     "@kinde/jwt-decoder": "^0.2.0",
-    "@kinde/jwt-validator": "0.3.0-1",
+    "@kinde/jwt-validator": "^0.3.0-3",
     "@vitejs/plugin-react": "^4.3.1",
+    "base-64": "^1.0.0",
     "dotenv": "^16.4.5",
     "expo-auth-session": "^5.5.2",
     "expo-crypto": "^13.0.2",

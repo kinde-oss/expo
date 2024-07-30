@@ -22,10 +22,14 @@ import {
 import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 import Constants from "expo-constants";
-
+import { decode, encode } from "base-64";
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
 );
+
+// Polyfill for atob
+global.btoa = encode;
+global.atob = decode;
 
 export const KindeAuthProvider = ({
   children,
@@ -63,7 +67,10 @@ export const KindeAuthProvider = ({
       clientId,
       redirectUri,
       scopes: scopes,
-      extraParams: mapLoginMethodParamsForUrl(options),
+      extraParams: {
+        ...mapLoginMethodParamsForUrl(options),
+        has_success_page: "true",
+      },
     });
 
     if (discovery) {
@@ -102,18 +109,18 @@ export const KindeAuthProvider = ({
 
           if (exchangeCodeResponse.idToken) {
             const idTokenValidationResult = await validateToken({
-              token: exchangeCodeResponse.accessToken,
+              token: exchangeCodeResponse.idToken,
               domain: domain,
             });
             if (idTokenValidationResult.valid) {
               await setStorage(
                 StorageKeys.idToken,
-                exchangeCodeResponse.idToken!,
+                exchangeCodeResponse.idToken,
               );
             } else {
               console.error(
                 `Invalid id token`,
-                accessTokenValidationResult.message,
+                idTokenValidationResult.message,
               );
             }
           }
@@ -169,7 +176,7 @@ export const KindeAuthProvider = ({
   }
 
   /**
-   * Get current active it token, returns null if no token found
+   * Get current active id token, returns null if no token found
    * @returns {Promise<string | null>}
    */
   async function getIdToken(): Promise<string | null> {
@@ -186,16 +193,21 @@ export const KindeAuthProvider = ({
       permissions: string[];
       org_code: string;
     },
-  >(tokenType: "accessToken" | "idToken" = "accessToken") {
+  >(tokenType: "accessToken" | "idToken" = "accessToken"): Promise<T | null> {
     const token =
       tokenType === "accessToken" ? await getAccessToken() : await getIdToken();
 
     if (!token) {
       return null;
     }
-    return jwtDecoder<T>((await getAccessToken())!);
+    return jwtDecoder<T>(token);
   }
 
+  /**
+   *
+   * @param permissionKey gets the value of a permission
+   * @returns { PermissionAccess }
+   */
   async function getPermission(
     permissionKey: string,
   ): Promise<PermissionAccess> {
@@ -217,6 +229,10 @@ export const KindeAuthProvider = ({
     };
   }
 
+  /**
+   * Get all permissions
+   * @returns { Promise<Permissions> }
+   */
   async function getPermissions(): Promise<Permissions> {
     const token = await getDecodedToken();
 
@@ -234,6 +250,10 @@ export const KindeAuthProvider = ({
     };
   }
 
+  /**
+   * get all claims from the token
+   * @returns { Promise<T | null> }
+   */
   async function getClaims<T = JWTDecoded>(): Promise<T | null> {
     const token = await getAccessToken();
     if (!token) {
@@ -242,6 +262,11 @@ export const KindeAuthProvider = ({
     return jwtDecoder<T>(token);
   }
 
+  /**
+   *
+   * @param keyName key to get from the token
+   * @returns { Promise<string | number | string[] | null> }
+   */
   async function getClaim<T = JWTDecoded>(
     keyName: keyof T,
   ): Promise<string | number | string[] | null> {
