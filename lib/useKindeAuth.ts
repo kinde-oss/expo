@@ -4,6 +4,7 @@ import {
   LogoutResult,
   PermissionAccess,
   Permissions,
+  LogoutRequest
 } from "./types";
 import { LoginMethodParams } from "@kinde/js-utils";
 import { KindeAuthContext } from "./KindeAuthProvider";
@@ -11,7 +12,7 @@ import { JWTDecoded } from "@kinde/jwt-decoder";
 
 export interface KindeAuthHook {
   login: (options: Partial<LoginMethodParams>) => Promise<LoginResponse>;
-  logout: () => Promise<LogoutResult>;
+  logout: (options: LogoutRequest) => Promise<LogoutResult>;
   getAccessToken: () => Promise<string | null>;
   getIdToken: () => Promise<string | null>;
   getDecodedToken: () => Promise<
@@ -27,6 +28,7 @@ export interface KindeAuthHook {
   getClaim: <T = JWTDecoded>(
     keyName: keyof T,
   ) => Promise<string | number | string[] | null>;
+  isAuthenticated: () => boolean;
 }
 
 export const useKindeAuthContext = (): KindeAuthHook => {

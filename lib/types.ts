@@ -9,6 +9,10 @@ export type LoginFailureResponse = {
   errorMessage: string;
 };
 
+export type LogoutRequest = {
+  revokeToken: boolean;
+};
+
 export type LogoutResult = {
   success: boolean;
 };

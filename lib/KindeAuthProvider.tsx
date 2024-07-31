@@ -10,11 +10,12 @@ import {
   TokenTypeHint,
 } from "expo-auth-session";
 import { openAuthSessionAsync } from "expo-web-browser";
-import { createContext } from "react";
+import { createContext, useState } from "react";
 import { DEFAULT_TOKEN_SCOPES } from "./constants";
 import { getStorage, setStorage, StorageKeys } from "./storage";
 import {
   LoginResponse,
+  LogoutRequest,
   LogoutResult,
   PermissionAccess,
   Permissions,
@@ -42,6 +43,7 @@ export const KindeAuthProvider = ({
     process.env.EXPO_PUBLIC_KINDE_SCOPES?.split(" ") ||
     DEFAULT_TOKEN_SCOPES.split(" ");
 
+  const [authenticated, setAuthenticated] = useState<boolean>(false);
   const redirectUri = makeRedirectUri({ native: Constants.isDevice });
 
   const discovery: DiscoveryDocument | null = {
@@ -100,6 +102,7 @@ export const KindeAuthProvider = ({
               StorageKeys.accessToken,
               exchangeCodeResponse.accessToken,
             );
+            setAuthenticated(true);
           } else {
             console.error(
               `Invalid access token`,
@@ -140,31 +143,48 @@ export const KindeAuthProvider = ({
 
   /**
    * logout method
+   * @param {LogoutRequest} options
    * @returns {Promise<LogoutResult>}
    */
-  async function logout(): Promise<LogoutResult> {
+  async function logout({
+    revokeToken,
+  }: LogoutRequest): Promise<LogoutResult> {
+    const endSession = async () => {
+      await openAuthSessionAsync(
+        `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`,
+      );
+      await setStorage(StorageKeys.accessToken, null);
+      await setStorage(StorageKeys.idToken, null);
+      setAuthenticated(false);
+    };
+
     return new Promise(async (resolve) => {
       const accesstoken = await getStorage(StorageKeys.accessToken);
       if (accesstoken && discovery) {
-        revokeAsync(
-          { token: accesstoken!, tokenTypeHint: TokenTypeHint.AccessToken },
-          discovery,
-        )
-          .then(async () => {
-            await openAuthSessionAsync(
-              `${discovery.endSessionEndpoint}?redirect=${redirectUri}`,
-            );
-            await setStorage(StorageKeys.accessToken, null);
-            await setStorage(StorageKeys.idToken, null);
-            resolve({ success: true });
-          })
-          .catch((err: unknown) => {
-            console.error(err);
-            resolve({ success: false });
-          });
+        if (revokeToken) {
+          revokeAsync(
+            { token: accesstoken!, tokenTypeHint: TokenTypeHint.AccessToken },
+            discovery,
+          )
+            .then(async () => {
+              await endSession();
+              resolve({ success: true });
+            })
+            .catch((err: unknown) => {
+              console.error(err);
+              resolve({ success: false });
+            });
+        } else {
+          await endSession();
+          resolve({ success: true });
+        }
       }
       resolve({ success: true });
     });
+  }
+
+  function isAuthenticated(): boolean {
+    return authenticated
   }
 
   /**
@@ -291,6 +311,7 @@ export const KindeAuthProvider = ({
     getPermissions,
     getClaims,
     getClaim,
+    isAuthenticated
   };
 
   return (
