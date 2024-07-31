@@ -12,7 +12,7 @@ import { JWTDecoded } from "@kinde/jwt-decoder";
 
 export interface KindeAuthHook {
   login: (options: Partial<LoginMethodParams>) => Promise<LoginResponse>;
-  logout: (options: LogoutRequest) => Promise<LogoutResult>;
+  logout: (options: Partial<LogoutRequest>) => Promise<LogoutResult>;
   getAccessToken: () => Promise<string | null>;
   getIdToken: () => Promise<string | null>;
   getDecodedToken: () => Promise<
@@ -28,7 +28,7 @@ export interface KindeAuthHook {
   getClaim: <T = JWTDecoded>(
     keyName: keyof T,
   ) => Promise<string | number | string[] | null>;
-  isAuthenticated: () => boolean;
+  isAuthenticated: boolean;
 }
 
 export const useKindeAuthContext = (): KindeAuthHook => {

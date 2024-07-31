@@ -43,7 +43,7 @@ export const KindeAuthProvider = ({
     process.env.EXPO_PUBLIC_KINDE_SCOPES?.split(" ") ||
     DEFAULT_TOKEN_SCOPES.split(" ");
 
-  const [authenticated, setAuthenticated] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const redirectUri = makeRedirectUri({ native: Constants.isDevice });
 
   const discovery: DiscoveryDocument | null = {
@@ -102,7 +102,7 @@ export const KindeAuthProvider = ({
               StorageKeys.accessToken,
               exchangeCodeResponse.accessToken,
             );
-            setAuthenticated(true);
+            setIsAuthenticated(true);
           } else {
             console.error(
               `Invalid access token`,
@@ -146,14 +146,14 @@ export const KindeAuthProvider = ({
    * @param {LogoutRequest} options
    * @returns {Promise<LogoutResult>}
    */
-  async function logout({ revokeToken }: LogoutRequest): Promise<LogoutResult> {
+  async function logout({ revokeToken }: Partial<LogoutRequest> = {}): Promise<LogoutResult> {
     const endSession = async () => {
       await openAuthSessionAsync(
         `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`,
       );
       await setStorage(StorageKeys.accessToken, null);
       await setStorage(StorageKeys.idToken, null);
-      setAuthenticated(false);
+      setIsAuthenticated(false);
     };
 
     return new Promise(async (resolve) => {
@@ -179,10 +179,6 @@ export const KindeAuthProvider = ({
       }
       resolve({ success: true });
     });
-  }
-
-  function isAuthenticated(): boolean {
-    return authenticated;
   }
 
   /**
