@@ -146,9 +146,7 @@ export const KindeAuthProvider = ({
    * @param {LogoutRequest} options
    * @returns {Promise<LogoutResult>}
    */
-  async function logout({
-    revokeToken,
-  }: LogoutRequest): Promise<LogoutResult> {
+  async function logout({ revokeToken }: LogoutRequest): Promise<LogoutResult> {
     const endSession = async () => {
       await openAuthSessionAsync(
         `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`,
@@ -184,7 +182,7 @@ export const KindeAuthProvider = ({
   }
 
   function isAuthenticated(): boolean {
-    return authenticated
+    return authenticated;
   }
 
   /**
@@ -311,7 +309,7 @@ export const KindeAuthProvider = ({
     getPermissions,
     getClaims,
     getClaim,
-    isAuthenticated
+    isAuthenticated,
   };
 
   return (

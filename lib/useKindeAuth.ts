@@ -4,7 +4,7 @@ import {
   LogoutResult,
   PermissionAccess,
   Permissions,
-  LogoutRequest
+  LogoutRequest,
 } from "./types";
 import { LoginMethodParams } from "@kinde/js-utils";
 import { KindeAuthContext } from "./KindeAuthProvider";
