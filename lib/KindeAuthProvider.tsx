@@ -10,7 +10,7 @@ import {
   TokenTypeHint,
 } from "expo-auth-session";
 import { openAuthSessionAsync } from "expo-web-browser";
-import { createContext, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { DEFAULT_TOKEN_SCOPES } from "./constants";
 import { getStorage, setStorage, StorageKeys } from "./storage";
 import {
@@ -19,6 +19,7 @@ import {
   LogoutResult,
   PermissionAccess,
   Permissions,
+  UserProfile,
 } from "./types";
 import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
@@ -51,12 +52,17 @@ export const KindeAuthProvider = ({
     revocationEndpoint: `${domain}/oauth2/revoke`,
   };
 
-  /**
-   * Login method
-   * @param {Partial<LoginMethodParams>} options
-   * @returns {Promise<LoginResponse>}
-   */
-  const login = async (
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      const token = await getStorage(StorageKeys.accessToken);
+      if (token) {
+        setIsAuthenticated(true);
+      }
+    };
+    checkAuthentication();
+  }, []);
+
+  const authenticate = async (
     options: Partial<LoginMethodParams> = {},
   ): Promise<LoginResponse> => {
     if (!redirectUri) {
@@ -72,6 +78,7 @@ export const KindeAuthProvider = ({
       extraParams: {
         ...mapLoginMethodParamsForUrl(options),
         has_success_page: "true",
+        prompt: "login",
       },
     });
 
@@ -93,23 +100,6 @@ export const KindeAuthProvider = ({
             discovery,
           );
 
-          const accessTokenValidationResult = await validateToken({
-            token: exchangeCodeResponse.accessToken,
-            domain: domain,
-          });
-          if (accessTokenValidationResult.valid) {
-            await setStorage(
-              StorageKeys.accessToken,
-              exchangeCodeResponse.accessToken,
-            );
-            setIsAuthenticated(true);
-          } else {
-            console.error(
-              `Invalid access token`,
-              accessTokenValidationResult.message,
-            );
-          }
-
           if (exchangeCodeResponse.idToken) {
             const idTokenValidationResult = await validateToken({
               token: exchangeCodeResponse.idToken,
@@ -127,6 +117,24 @@ export const KindeAuthProvider = ({
               );
             }
           }
+
+          const accessTokenValidationResult = await validateToken({
+            token: exchangeCodeResponse.accessToken,
+            domain: domain,
+          });
+          if (accessTokenValidationResult.valid) {
+            await setStorage(
+              StorageKeys.accessToken,
+              exchangeCodeResponse.accessToken,
+            );
+            setIsAuthenticated(true);
+          } else {
+            console.error(
+              `Invalid access token`,
+              accessTokenValidationResult.message,
+            );
+          }
+
           return {
             success: true,
             accessToken: exchangeCodeResponse.accessToken,
@@ -142,11 +150,35 @@ export const KindeAuthProvider = ({
   };
 
   /**
+   * Login method
+   * @param {Partial<LoginMethodParams>} options
+   * @returns {Promise<LoginResponse>}
+   */
+  const login = async (
+    options: Partial<LoginMethodParams> = {},
+  ): Promise<LoginResponse> => {
+    return authenticate({ ...options, prompt: "login" });
+  };
+
+  /**
+   * Login method
+   * @param {Partial<LoginMethodParams>} options
+   * @returns {Promise<LoginResponse>}
+   */
+  const register = async (
+    options: Partial<LoginMethodParams> = {},
+  ): Promise<LoginResponse> => {
+    return authenticate({ ...options, prompt: "create" });
+  };
+
+  /**
    * logout method
    * @param {LogoutRequest} options
    * @returns {Promise<LogoutResult>}
    */
-  async function logout({ revokeToken }: Partial<LogoutRequest> = {}): Promise<LogoutResult> {
+  async function logout({
+    revokeToken,
+  }: Partial<LogoutRequest> = {}): Promise<LogoutResult> {
     const endSession = async () => {
       await openAuthSessionAsync(
         `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`,
@@ -210,7 +242,6 @@ export const KindeAuthProvider = ({
   >(tokenType: "accessToken" | "idToken" = "accessToken"): Promise<T | null> {
     const token =
       tokenType === "accessToken" ? await getAccessToken() : await getIdToken();
-
     if (!token) {
       return null;
     }
@@ -281,9 +312,12 @@ export const KindeAuthProvider = ({
    * @param keyName key to get from the token
    * @returns { Promise<string | number | string[] | null> }
    */
-  async function getClaim<T = JWTDecoded>(
+  async function getClaim<T = JWTDecoded, V = string | number | string[]>(
     keyName: keyof T,
-  ): Promise<string | number | string[] | null> {
+  ): Promise<{
+    name: keyof T;
+    value: V;
+  } | null> {
     const token = await getAccessToken();
     if (!token) {
       return null;
@@ -292,19 +326,87 @@ export const KindeAuthProvider = ({
     if (!claims) {
       return null;
     }
-    return claims[keyName] as string | number | string[] | null;
+    return {
+      name: keyName,
+      value: claims[keyName] as V,
+    };
+  }
+
+  async function getCurrentOrganization(): Promise<string | null> {
+    return (
+      (await getClaim<{ org_code: string }, string>("org_code"))?.value || null
+    );
+  }
+
+  async function getUserOrganizations(): Promise<string[] | null> {
+    return (
+      (
+        await getDecodedToken<{
+          org_codes: string[];
+        }>("idToken")
+      )?.org_codes || null
+    );
+  }
+
+  async function getFlag<T = string | boolean | number>(
+    name: string,
+  ): Promise<T | null> {
+    const flags = (
+      await getClaim<
+        { feature_flags: string },
+        Record<string, { t: "b" | "i" | "s"; v: T }>
+      >("feature_flags")
+    )?.value;
+
+    if (name && flags) {
+      const value = flags[name];
+      return value.v;
+    }
+    return null;
+  }
+
+  async function getUserProfile(): Promise<UserProfile | null> {
+    const idToken = await getDecodedToken<{
+      sub: string;
+      given_name: string;
+      family_name: string;
+      email: string;
+      picture: string;
+    }>("idToken");
+    if (!idToken) {
+      return null;
+    }
+    return {
+      id: idToken.sub,
+      givenName: idToken.given_name,
+      familyName: idToken.family_name,
+      email: idToken.email,
+      picture: idToken.picture,
+    };
   }
 
   const value: KindeAuthHook = {
     login,
     logout,
+    register,
+
     getAccessToken,
     getIdToken,
     getDecodedToken,
+
     getPermission,
     getPermissions,
+
     getClaims,
     getClaim,
+
+    getUserProfile,
+
+    getCurrentOrganization,
+    getUserOrganizations,
+
+    getFlag,
+
     isAuthenticated,
   };
 

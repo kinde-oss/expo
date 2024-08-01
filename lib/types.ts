@@ -25,3 +25,11 @@ export type PermissionAccess = {
 export type Permissions = { orgCode: string | null; permissions: string[] };
 
 export type LoginResponse = LoginSuccessResponse | LoginFailureResponse;
+
+export type UserProfile = {
+  id: string;
+  givenName: string;
+  familyName: string;
+  email: string;
+  picture: string;
+};
