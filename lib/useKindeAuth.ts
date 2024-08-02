@@ -12,9 +12,9 @@ import { KindeAuthContext } from "./KindeAuthProvider";
 import { JWTDecoded } from "@kinde/jwt-decoder";
 
 export interface KindeAuthHook {
-  login: (options: Partial<LoginMethodParams>) => Promise<LoginResponse>;
-  register: (options: Partial<LoginMethodParams>) => Promise<LoginResponse>;
-  logout: (options: Partial<LogoutRequest>) => Promise<LogoutResult>;
+  login: (options?: Partial<LoginMethodParams>) => Promise<LoginResponse>;
+  register: (options?: Partial<LoginMethodParams>) => Promise<LoginResponse>;
+  logout: (options?: Partial<LogoutRequest>) => Promise<LogoutResult>;
   getAccessToken: () => Promise<string | null>;
   getIdToken: () => Promise<string | null>;
   getDecodedToken: () => Promise<
