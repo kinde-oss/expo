@@ -78,7 +78,6 @@ export const KindeAuthProvider = ({
       extraParams: {
         ...mapLoginMethodParamsForUrl(options),
         has_success_page: "true",
-        prompt: "login",
       },
     });
 
