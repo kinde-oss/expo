@@ -17,6 +17,8 @@ EXPO_PUBLIC_KINDE_DOMAIN=[yourapp.kinde.com]
 EXPO_PUBLIC_KINDE_CLIENT_ID="ApplicationClientId"
 // Optional (default: "openid profile email offline")
 EXPO_PUBLIC_KINDE_SCOPES="openid profile email offline"
+// Required for production
+EXPO_PUBLIC_KINDE_REDIRECT_URL=""
 ```
 
 The redirection URL is automatically computed using Expo Auth Session `makeRedirectUri` function. You can find more information about this function [here](https://docs.expo.dev/versions/latest/sdk/auth-session/#makeRedirectUri).

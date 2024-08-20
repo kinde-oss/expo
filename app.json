@@ -1,0 +1,9 @@
+{
+  "expo": {
+    "name": "@kinde/expo",
+    "slug": "@kindeexpo",
+    "version": "0.1.2-21",
+    "sdkVersion": "51.0.0",
+    "platforms": ["ios", "android"]
+  }
+}

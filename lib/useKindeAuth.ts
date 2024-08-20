@@ -6,6 +6,7 @@ import {
   Permissions,
   LogoutRequest,
   UserProfile,
+  RefreshResponse,
 } from "./types";
 import { LoginMethodParams } from "@kinde/js-utils";
 import { KindeAuthContext } from "./KindeAuthProvider";
@@ -17,6 +18,7 @@ export interface KindeAuthHook {
   logout: (options?: Partial<LogoutRequest>) => Promise<LogoutResult>;
   getAccessToken: () => Promise<string | null>;
   getIdToken: () => Promise<string | null>;
+  refreshToken: () => Promise<RefreshResponse>;
   getDecodedToken: () => Promise<
     | (JWTDecoded & {
         permissions: string[];
@@ -36,7 +38,7 @@ export interface KindeAuthHook {
   getCurrentOrganization: () => Promise<string | null>;
   getUserOrganizations: () => Promise<string[] | null>;
   getUserProfile: () => Promise<UserProfile | null>;
-
+  clearStorage: () => Promise<void>;
   getFlag: <T = string | boolean | number>(name: string) => Promise<T | null>;
   isAuthenticated: boolean;
 }

@@ -2,11 +2,11 @@ import { LoginMethodParams, mapLoginMethodParamsForUrl } from "@kinde/js-utils";
 import { validateToken } from "@kinde/jwt-validator";
 import {
   AuthRequest,
-  DiscoveryDocument,
   exchangeCodeAsync,
   makeRedirectUri,
-  useAutoDiscovery,
+  refreshAsync,
   revokeAsync,
+  TokenResponse,
   TokenTypeHint,
 } from "expo-auth-session";
 import { openAuthSessionAsync } from "expo-web-browser";
@@ -19,12 +19,14 @@ import {
   LogoutResult,
   PermissionAccess,
   Permissions,
+  RefreshResponse,
   UserProfile,
 } from "./types";
 import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 import Constants from "expo-constants";
 import { decode, encode } from "base-64";
+
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
 );
@@ -39,18 +41,19 @@ export const KindeAuthProvider = ({
   children: React.ReactNode;
 }) => {
   const domain = process.env.EXPO_PUBLIC_KINDE_DOMAIN!;
+
   const clientId = process.env.EXPO_PUBLIC_KINDE_CLIENT_ID!;
   const scopes =
     process.env.EXPO_PUBLIC_KINDE_SCOPES?.split(" ") ||
     DEFAULT_TOKEN_SCOPES.split(" ");
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const redirectUri = makeRedirectUri({ native: Constants.isDevice });
-
-  const discovery: DiscoveryDocument | null = {
-    ...useAutoDiscovery(domain),
-    revocationEndpoint: `${domain}/oauth2/revoke`,
-  };
+  const redirectUri =
+    process.env.EXPO_PUBLIC_KINDE_REDIRECT_URL ||
+    makeRedirectUri({
+      native: Constants.isDevice,
+      path: "kinde_callback",
+    });
 
   useEffect(() => {
     const checkAuthentication = async () => {
@@ -61,6 +64,51 @@ export const KindeAuthProvider = ({
     };
     checkAuthentication();
   }, []);
+
+  const clearStorage = async () => {
+    await setStorage(StorageKeys.accessToken, null);
+    await setStorage(StorageKeys.idToken, null);
+    await setStorage(StorageKeys.refreshToken, null);
+    setIsAuthenticated(false);
+  };
+
+  const storeTokens = async (exchangeCodeResponse: TokenResponse) => {
+    if (exchangeCodeResponse.idToken) {
+      const idTokenValidationResult = await validateToken({
+        token: exchangeCodeResponse.idToken,
+        domain: domain,
+      });
+      if (idTokenValidationResult.valid) {
+        await setStorage(StorageKeys.idToken, exchangeCodeResponse.idToken);
+      } else {
+        console.error(`Invalid id token`, idTokenValidationResult.message);
+      }
+    }
+
+    if (exchangeCodeResponse.refreshToken) {
+      await setStorage(
+        StorageKeys.refreshToken,
+        exchangeCodeResponse.refreshToken,
+      );
+    }
+
+    const accessTokenValidationResult = await validateToken({
+      token: exchangeCodeResponse.accessToken,
+      domain: domain,
+    });
+    if (accessTokenValidationResult.valid) {
+      await setStorage(
+        StorageKeys.accessToken,
+        exchangeCodeResponse.accessToken,
+      );
+      setIsAuthenticated(true);
+    } else {
+      console.error(
+        `Invalid access token`,
+        accessTokenValidationResult.message,
+      );
+    }
+  };
 
   const authenticate = async (
     options: Partial<LoginMethodParams> = {},
@@ -81,71 +129,44 @@ export const KindeAuthProvider = ({
       },
     });
 
-    if (discovery) {
-      try {
-        const codeResponse = await request.promptAsync(discovery, {
+    try {
+      const codeResponse = await request.promptAsync(
+        {
+          authorizationEndpoint: `${domain}/oauth2/auth`,
+        },
+        {
           showInRecents: true,
-        });
-        if (request && codeResponse?.type === "success" && discovery) {
-          const exchangeCodeResponse = await exchangeCodeAsync(
-            {
-              clientId,
-              code: codeResponse.params.code,
-              extraParams: request.codeVerifier
-                ? { code_verifier: request.codeVerifier }
-                : undefined,
-              redirectUri,
-            },
-            discovery,
-          );
+        },
+      );
+      if (request && codeResponse?.type === "success") {
+        const exchangeCodeResponse = await exchangeCodeAsync(
+          {
+            clientId,
+            code: codeResponse.params.code,
+            extraParams: request.codeVerifier
+              ? { code_verifier: request.codeVerifier }
+              : undefined,
+            redirectUri,
+          },
+          {
+            tokenEndpoint: `${domain}/oauth2/token`,
+          },
+        );
 
-          if (exchangeCodeResponse.idToken) {
-            const idTokenValidationResult = await validateToken({
-              token: exchangeCodeResponse.idToken,
-              domain: domain,
-            });
-            if (idTokenValidationResult.valid) {
-              await setStorage(
-                StorageKeys.idToken,
-                exchangeCodeResponse.idToken,
-              );
-            } else {
-              console.error(
-                `Invalid id token`,
-                idTokenValidationResult.message,
-              );
-            }
-          }
+        await storeTokens(exchangeCodeResponse);
 
-          const accessTokenValidationResult = await validateToken({
-            token: exchangeCodeResponse.accessToken,
-            domain: domain,
-          });
-          if (accessTokenValidationResult.valid) {
-            await setStorage(
-              StorageKeys.accessToken,
-              exchangeCodeResponse.accessToken,
-            );
-            setIsAuthenticated(true);
-          } else {
-            console.error(
-              `Invalid access token`,
-              accessTokenValidationResult.message,
-            );
-          }
-
-          return {
-            success: true,
-            accessToken: exchangeCodeResponse.accessToken,
-            idToken: exchangeCodeResponse.idToken!,
-          };
-        }
-      } catch (err: any) {
-        console.error(err);
-        return { success: false, errorMessage: err.message };
+        return {
+          success: true,
+          accessToken: exchangeCodeResponse.accessToken,
+          idToken: exchangeCodeResponse.idToken!,
+        };
+      } else {
+        return { success: false, errorMessage: "No code response" };
       }
+    } catch (err: any) {
+      console.error(err);
+      return { success: false, errorMessage: err.message };
     }
-    return { success: false, errorMessage: "No discovery document" };
   };
 
   /**
@@ -179,9 +200,7 @@ export const KindeAuthProvider = ({
     revokeToken,
   }: Partial<LogoutRequest> = {}): Promise<LogoutResult> {
     const endSession = async () => {
-      await openAuthSessionAsync(
-        `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`,
-      );
+      await openAuthSessionAsync(`${domain}/logout?redirect=${redirectUri}`);
       await setStorage(StorageKeys.accessToken, null);
       await setStorage(StorageKeys.idToken, null);
       setIsAuthenticated(false);
@@ -189,11 +208,13 @@ export const KindeAuthProvider = ({
 
     return new Promise(async (resolve) => {
       const accesstoken = await getStorage(StorageKeys.accessToken);
-      if (accesstoken && discovery) {
+      if (accesstoken) {
         if (revokeToken) {
           revokeAsync(
             { token: accesstoken!, tokenTypeHint: TokenTypeHint.AccessToken },
-            discovery,
+            {
+              revocationEndpoint: `${domain}/oauth2/revoke`,
+            },
           )
             .then(async () => {
               await endSession();
@@ -210,6 +231,38 @@ export const KindeAuthProvider = ({
       }
       resolve({ success: true });
     });
+  }
+
+  /**
+   * Refresh token
+   * @returns {Promise<void>}
+   */
+  async function refreshToken(): Promise<RefreshResponse> {
+    const refreshToken = await getStorage(StorageKeys.refreshToken);
+    if (refreshToken) {
+      const refreshedTokens = await refreshAsync(
+        {
+          refreshToken,
+          clientId,
+        },
+        {
+          tokenEndpoint: `${domain}/oauth2/token`,
+        },
+      );
+
+      await storeTokens(refreshedTokens);
+
+      return {
+        success: true,
+        accessToken: refreshedTokens.accessToken,
+        idToken: refreshedTokens.idToken,
+      };
+    } else {
+      return {
+        success: false,
+        errorMessage: "No refresh token found",
+      };
+    }
   }
 
   /**
@@ -392,6 +445,7 @@ export const KindeAuthProvider = ({
     getAccessToken,
     getIdToken,
     getDecodedToken,
+    refreshToken,
 
     getPermission,
     getPermissions,
@@ -405,6 +459,8 @@ export const KindeAuthProvider = ({
     getUserOrganizations,
 
     getFlag,
+
+    clearStorage,
 
     isAuthenticated,
   };

@@ -1,7 +1,7 @@
 export type LoginSuccessResponse = {
   success: true;
   accessToken: string;
-  idToken: string;
+  idToken?: string;
 };
 
 export type LoginFailureResponse = {
@@ -25,6 +25,8 @@ export type PermissionAccess = {
 export type Permissions = { orgCode: string | null; permissions: string[] };
 
 export type LoginResponse = LoginSuccessResponse | LoginFailureResponse;
+
+export type RefreshResponse = LoginSuccessResponse | LoginFailureResponse;
 
 export type UserProfile = {
   id: string;
