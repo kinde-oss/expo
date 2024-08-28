@@ -1,5 +1,9 @@
 {
   "name": "@kinde/expo",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kinde-oss/expo.git"
+  },
   "private": false,
   "type": "module",
   "files": [
