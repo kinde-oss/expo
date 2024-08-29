@@ -26,6 +26,16 @@ import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 import Constants from "expo-constants";
 import { decode, encode } from "base-64";
+// import { captureMessage } from '@sentry/react-native';
+import * as Sentry from "@sentry/react-native";
+// import * as Linking from "expo-linking";
+
+Sentry.init({
+  dsn: "https://1fcc959cdf5e4b86850057a18b38ec2a@o4507175345455104.ingest.de.sentry.io/4507851221041232",
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // enableSpotlight: __DEV__,
+});
 
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
@@ -47,6 +57,11 @@ export const KindeAuthProvider = ({
     process.env.EXPO_PUBLIC_KINDE_SCOPES?.split(" ") ||
     DEFAULT_TOKEN_SCOPES.split(" ");
 
+  // const url = Linking.useURL();
+  // useEffect(() => {
+  //   Sentry.captureMessage(`Expo SDK URL: ${url}`);
+  // }, [url]);
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const redirectUri =
     process.env.EXPO_PUBLIC_KINDE_REDIRECT_URL ||
@@ -54,6 +69,8 @@ export const KindeAuthProvider = ({
       native: Constants.isDevice,
       path: "kinde_callback",
     });
+
+  Sentry.captureMessage(`redirectUri: ${redirectUri}`);
 
   useEffect(() => {
     const checkAuthentication = async () => {
@@ -129,6 +146,8 @@ export const KindeAuthProvider = ({
       },
     });
 
+    Sentry.captureMessage(`request: ${JSON.stringify(request)}`);
+
     try {
       const codeResponse = await request.promptAsync(
         {
@@ -161,6 +180,7 @@ export const KindeAuthProvider = ({
           idToken: exchangeCodeResponse.idToken!,
         };
       } else {
+        Sentry.captureMessage(`bad response: ${JSON.stringify(codeResponse)}`);
         return { success: false, errorMessage: "No code response" };
       }
     } catch (err: any) {

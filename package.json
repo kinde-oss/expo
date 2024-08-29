@@ -5,7 +5,7 @@
   "files": [
     "dist"
   ],
-  "version": "0.1.2-24",
+  "version": "0.1.2-28",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -36,6 +36,7 @@
     "@kinde/js-utils": "0.1.0-7",
     "@kinde/jwt-decoder": "^0.2.0",
     "@kinde/jwt-validator": "^0.3.0-3",
+    "@sentry/react-native": "^5.31.0",
     "@vitejs/plugin-react": "^4.3.1",
     "base-64": "^1.0.0",
     "dotenv": "^16.4.5",
