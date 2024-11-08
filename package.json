@@ -1,15 +1,11 @@
 {
   "name": "@kinde/expo",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/kinde-oss/expo.git"
-  },
   "private": false,
   "type": "module",
   "files": [
     "dist"
   ],
-  "version": "0.1.1",
+  "version": "0.1.4",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -18,7 +14,9 @@
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "lint": "prettier --check .",
-    "lint:fix": "prettier --write ."
+    "lint:fix": "prettier --write .",
+    "publish-npm": "pnpm build && npm publish",
+    "publish-dry": "pnpm publish-npm --dry-run"
   },
   "module": "dist/kinde-expo.cjs",
   "main": "dist/kinde-expo.cjs",
@@ -45,7 +43,8 @@
     "expo-auth-session": "^5.5.2",
     "expo-crypto": "^13.0.2",
     "expo-linking": "^6.3.1",
-    "expo-secure-store": "^13.0.2"
+    "expo-secure-store": "^13.0.2",
+    "expo-web-browser": "^13.0.3"
   },
   "peerDependencies": {
     "expo": "*",
