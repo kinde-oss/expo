@@ -35,14 +35,24 @@ global.atob = decode;
 
 export const KindeAuthProvider = ({
   children,
+  config,
 }: {
   children: React.ReactNode;
+  config: {
+    domain: string | undefined;
+    clientId: string | undefined;
+    scopes?: string;
+  };
 }) => {
-  const domain = process.env.EXPO_PUBLIC_KINDE_DOMAIN!;
-  const clientId = process.env.EXPO_PUBLIC_KINDE_CLIENT_ID!;
-  const scopes =
-    process.env.EXPO_PUBLIC_KINDE_SCOPES?.split(" ") ||
-    DEFAULT_TOKEN_SCOPES.split(" ");
+  const domain = config.domain;
+  if (domain === undefined)
+    throw new Error("KindeAuthProvider config.domain prop is undefined");
+
+  const clientId = config.clientId;
+  if (clientId === undefined)
+    throw new Error("KindeAuthProvider config.clientId prop is undefined");
+
+  const scopes = config.scopes?.split(" ") || DEFAULT_TOKEN_SCOPES.split(" ");
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const redirectUri = makeRedirectUri({ native: Constants.isDevice });
