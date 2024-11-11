@@ -29,9 +29,12 @@ export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
 );
 
-// Polyfill for atob
-global.btoa = encode;
-global.atob = decode;
+// global is unavailable for web `expo export` script
+if (typeof global !== "undefined") {
+  // Polyfill for atob
+  global.btoa = encode;
+  global.atob = decode;
+}
 
 export const KindeAuthProvider = ({
   children,
