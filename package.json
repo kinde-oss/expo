@@ -1,11 +1,11 @@
 {
-  "name": "@kinde/expo",
+  "name": "@bearmore/kinde-expo",
   "private": false,
   "type": "module",
   "files": [
     "dist"
   ],
-  "version": "0.1.4",
+  "version": "0.1.10",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

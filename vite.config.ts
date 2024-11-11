@@ -8,6 +8,7 @@ export default defineConfig({
     global: "window",
   },
   build: {
+    minify: false,
     lib: {
       entry: resolve(__dirname, "lib/main.ts"),
       formats: ["es", "cjs"],
