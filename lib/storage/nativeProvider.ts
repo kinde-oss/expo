@@ -1,5 +1,5 @@
 import { deleteItemAsync, getItemAsync, setItemAsync } from "expo-secure-store";
-import { StorageKeys } from "../constants";
+import { StorageKeys } from "../enums";
 import { IStorageProvider } from "./storageProvider.interface";
 
 /**

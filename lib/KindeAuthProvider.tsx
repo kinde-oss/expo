@@ -11,11 +11,7 @@ import {
 } from "expo-auth-session";
 import { openAuthSessionAsync } from "expo-web-browser";
 import { createContext, useEffect, useState } from "react";
-import {
-  DEFAULT_PLATFORM,
-  DEFAULT_TOKEN_SCOPES,
-  StorageKeys,
-} from "./constants";
+import { DEFAULT_PLATFORM, DEFAULT_TOKEN_SCOPES } from "./constants";
 import StorageProvider from "./storage";
 import {
   LoginResponse,
@@ -29,6 +25,7 @@ import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 import Constants from "expo-constants";
 import { decode, encode } from "base-64";
+import { StorageKeys } from "./enums";
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined
 );
@@ -58,7 +55,7 @@ export const KindeAuthProvider = ({
     throw new Error("KindeAuthProvider config.clientId prop is undefined");
 
   // Handle the storage provider based on platform.
-  const platform = config.platform || DEFAULT_PLATFORM;
+  const platform = config.platform ?? DEFAULT_PLATFORM;
   const { getStorage, setStorage } = StorageProvider(platform);
 
   const scopes = config.scopes?.split(" ") || DEFAULT_TOKEN_SCOPES.split(" ");

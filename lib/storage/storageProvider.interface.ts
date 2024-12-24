@@ -1,4 +1,4 @@
-import { StorageKeys } from "../constants";
+import { StorageKeys } from "../enums";
 
 export interface IStorageProvider {
   /**
