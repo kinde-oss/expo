@@ -9,7 +9,7 @@ import { WebStorageProvider } from "./webProvider";
  * @returns {Promise<void>}
  */
 export default function StorageProvider(
-  platform: "web" | "native" | string = DEFAULT_PLATFORM
+  platform: "web" | "native" = DEFAULT_PLATFORM
 ): IStorageProvider {
   switch (platform) {
     case "web":
