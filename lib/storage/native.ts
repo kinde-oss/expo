@@ -1,11 +1,5 @@
 import { deleteItemAsync, getItemAsync, setItemAsync } from "expo-secure-store";
-
-export enum StorageKeys {
-  accessToken,
-  idToken,
-  state,
-}
-
+import { StorageKeys } from "./index";
 /**
  * Sets item in the storage
  * @param {StorageKeys} key Key to store the value

@@ -26,7 +26,7 @@ import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 import Constants from "expo-constants";
 import { decode, encode } from "base-64";
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
-  undefined,
+  undefined
 );
 
 // Polyfill for atob
@@ -73,7 +73,7 @@ export const KindeAuthProvider = ({
   }, []);
 
   const authenticate = async (
-    options: Partial<LoginMethodParams> = {},
+    options: Partial<LoginMethodParams> = {}
   ): Promise<LoginResponse> => {
     if (!redirectUri) {
       return {
@@ -106,7 +106,7 @@ export const KindeAuthProvider = ({
                 : undefined,
               redirectUri,
             },
-            discovery,
+            discovery
           );
 
           if (exchangeCodeResponse.idToken) {
@@ -117,12 +117,12 @@ export const KindeAuthProvider = ({
             if (idTokenValidationResult.valid) {
               await setStorage(
                 StorageKeys.idToken,
-                exchangeCodeResponse.idToken,
+                exchangeCodeResponse.idToken
               );
             } else {
               console.error(
                 `Invalid id token`,
-                idTokenValidationResult.message,
+                idTokenValidationResult.message
               );
             }
           }
@@ -134,13 +134,13 @@ export const KindeAuthProvider = ({
           if (accessTokenValidationResult.valid) {
             await setStorage(
               StorageKeys.accessToken,
-              exchangeCodeResponse.accessToken,
+              exchangeCodeResponse.accessToken
             );
             setIsAuthenticated(true);
           } else {
             console.error(
               `Invalid access token`,
-              accessTokenValidationResult.message,
+              accessTokenValidationResult.message
             );
           }
 
@@ -164,7 +164,7 @@ export const KindeAuthProvider = ({
    * @returns {Promise<LoginResponse>}
    */
   const login = async (
-    options: Partial<LoginMethodParams> = {},
+    options: Partial<LoginMethodParams> = {}
   ): Promise<LoginResponse> => {
     return authenticate({ ...options, prompt: "login" });
   };
@@ -175,7 +175,7 @@ export const KindeAuthProvider = ({
    * @returns {Promise<LoginResponse>}
    */
   const register = async (
-    options: Partial<LoginMethodParams> = {},
+    options: Partial<LoginMethodParams> = {}
   ): Promise<LoginResponse> => {
     return authenticate({ ...options, prompt: "create" });
   };
@@ -190,7 +190,7 @@ export const KindeAuthProvider = ({
   }: Partial<LogoutRequest> = {}): Promise<LogoutResult> {
     const endSession = async () => {
       await openAuthSessionAsync(
-        `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`,
+        `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`
       );
       await setStorage(StorageKeys.accessToken, null);
       await setStorage(StorageKeys.idToken, null);
@@ -203,7 +203,7 @@ export const KindeAuthProvider = ({
         if (revokeToken) {
           revokeAsync(
             { token: accesstoken!, tokenTypeHint: TokenTypeHint.AccessToken },
-            discovery,
+            discovery
           )
             .then(async () => {
               await endSession();
@@ -263,7 +263,7 @@ export const KindeAuthProvider = ({
    * @returns { PermissionAccess }
    */
   async function getPermission(
-    permissionKey: string,
+    permissionKey: string
   ): Promise<PermissionAccess> {
     const token = await getDecodedToken();
 
@@ -322,7 +322,7 @@ export const KindeAuthProvider = ({
    * @returns { Promise<string | number | string[] | null> }
    */
   async function getClaim<T = JWTDecoded, V = string | number | string[]>(
-    keyName: keyof T,
+    keyName: keyof T
   ): Promise<{
     name: keyof T;
     value: V;
@@ -358,7 +358,7 @@ export const KindeAuthProvider = ({
   }
 
   async function getFlag<T = string | boolean | number>(
-    name: string,
+    name: string
   ): Promise<T | null> {
     const flags = (
       await getClaim<
