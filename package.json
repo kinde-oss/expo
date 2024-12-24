@@ -49,8 +49,7 @@
     "expo-web-browser": "~14.0.1"
   },
   "peerDependencies": {
-    "expo": "*",
-    "react-native": "^0.74.3"
+    "expo": "*"
   },
   "publishConfig": {
     "access": "public"
