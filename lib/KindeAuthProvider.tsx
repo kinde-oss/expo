@@ -9,7 +9,11 @@ import {
   revokeAsync,
   TokenTypeHint,
 } from "expo-auth-session";
-import { openAuthSessionAsync } from "expo-web-browser";
+
+import {
+  openAuthSessionAsync,
+  maybeCompleteAuthSession,
+} from "expo-web-browser";
 import { createContext, useEffect, useState } from "react";
 import { DEFAULT_PLATFORM, DEFAULT_TOKEN_SCOPES } from "./constants";
 import StorageProvider from "./storage";
@@ -26,6 +30,8 @@ import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 import Constants from "expo-constants";
 import { decode, encode } from "base-64";
 import { StorageKeys } from "./enums";
+maybeCompleteAuthSession();
+
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined
 );
