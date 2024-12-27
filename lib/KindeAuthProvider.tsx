@@ -71,6 +71,8 @@ export const KindeAuthProvider = ({
   const scopes = config.scopes?.split(" ") || DEFAULT_TOKEN_SCOPES.split(" ");
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isReady, setIsReady] = useState<boolean>(false);
+
   const redirectUri = makeRedirectUri({ native: Constants.isDevice });
 
   const discovery: DiscoveryDocument | null = {
@@ -85,20 +87,24 @@ export const KindeAuthProvider = ({
         const { valid } = await validateToken({ token, domain });
         if (valid) {
           setIsAuthenticated(true);
+          setIsReady(true);
           return;
         } else {
           // try to refresh if token is invalid
           const refresh = await refreshToken();
           if (!refresh.success) {
             setIsAuthenticated(false);
+            setIsReady(true);
             return;
           }
 
           setIsAuthenticated(true);
+          setIsReady(true);
           return;
         }
       } else {
         setIsAuthenticated(false);
+        setIsReady(true);
         return;
       }
     };
@@ -123,6 +129,7 @@ export const KindeAuthProvider = ({
       if (idTokenValidationResult.valid) {
         await setStorage(StorageKeys.idToken, response.idToken);
       } else {
+        await setStorage(StorageKeys.idToken, null);
         return {
           success: false,
           errorMessage: `Invalid id token: ${idTokenValidationResult.message}`,
@@ -139,6 +146,7 @@ export const KindeAuthProvider = ({
       await setStorage(StorageKeys.accessToken, response.accessToken);
       setIsAuthenticated(true);
     } else {
+      await setStorage(StorageKeys.accessToken, null);
       return {
         success: false,
         errorMessage: `Invalid access token: ${accessTokenValidationResult.message}`,
@@ -147,7 +155,7 @@ export const KindeAuthProvider = ({
 
     // Dont store refresh token on web.
     if (platform !== "web" && response.refreshToken)
-      setStorage(StorageKeys.refreshToken, response.refreshToken);
+      await setStorage(StorageKeys.refreshToken, response.refreshToken);
 
     return {
       success: true,
@@ -236,12 +244,10 @@ export const KindeAuthProvider = ({
    */
   const refreshToken = async (): Promise<LoginResponse> => {
     const refreshToken = await getStorage(StorageKeys.refreshToken);
-    if (!refreshToken) {
+    if (!refreshToken)
       return { success: false, errorMessage: "No refresh token" };
-    }
-    if (!discovery) {
+    if (!discovery)
       return { success: false, errorMessage: "No discovery document" };
-    }
 
     // get accessToken by exchanging refreshToken
     const exchangeCodeResponse = await refreshAsync(
@@ -251,6 +257,8 @@ export const KindeAuthProvider = ({
       },
       discovery
     );
+
+    console.log("exchangeCodeResponse", exchangeCodeResponse);
 
     return processTokenResponse(exchangeCodeResponse);
   };
@@ -302,7 +310,19 @@ export const KindeAuthProvider = ({
    * @returns {Promise<string | null>}
    */
   async function getAccessToken(): Promise<string | null> {
-    return getStorage(StorageKeys.accessToken);
+    const token = await getStorage(StorageKeys.accessToken);
+    if (!token) return null;
+
+    const { valid } = await validateToken({ token, domain });
+
+    if (!valid) {
+      const refresh = await refreshToken();
+      console.log("refresh", refresh);
+      if (!refresh.success) return null;
+      return refresh.accessToken;
+    }
+
+    return token;
   }
 
   /**
@@ -510,6 +530,7 @@ export const KindeAuthProvider = ({
     getFlag,
 
     isAuthenticated,
+    isReady,
   };
 
   return (

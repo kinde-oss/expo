@@ -40,6 +40,7 @@ export interface KindeAuthHook {
   getUserProfile: () => Promise<UserProfile | null>;
   getFlag: <T = string | boolean | number>(name: string) => Promise<T | null>;
   isAuthenticated: boolean;
+  isReady: boolean;
 }
 
 export const useKindeAuthContext = (): KindeAuthHook => {
