@@ -87,29 +87,25 @@ export const KindeAuthProvider = ({
         const { valid } = await validateToken({ token, domain });
         if (valid) {
           setIsAuthenticated(true);
-          setIsReady(true);
-          return;
-        } else {
-          // try to refresh if token is invalid
-          const refresh = await refreshToken();
-          if (!refresh.success) {
-            setIsAuthenticated(false);
-            setIsReady(true);
-            return;
-          }
-
-          setIsAuthenticated(true);
-          setIsReady(true);
           return;
         }
+
+        // try to refresh if token is invalid
+        const refresh = await refreshToken();
+        if (!refresh.success) {
+          setIsAuthenticated(false);
+          return;
+        }
+
+        setIsAuthenticated(true);
+        return;
       } else {
         setIsAuthenticated(false);
-        setIsReady(true);
         return;
       }
     };
 
-    checkAuthentication();
+    checkAuthentication().finally(() => setIsReady(true));
   }, []);
 
   /**
@@ -258,8 +254,6 @@ export const KindeAuthProvider = ({
       discovery
     );
 
-    console.log("exchangeCodeResponse", exchangeCodeResponse);
-
     return processTokenResponse(exchangeCodeResponse);
   };
 
@@ -317,7 +311,6 @@ export const KindeAuthProvider = ({
 
     if (!valid) {
       const refresh = await refreshToken();
-      console.log("refresh", refresh);
       if (!refresh.success) return null;
       return refresh.accessToken;
     }
