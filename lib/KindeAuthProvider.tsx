@@ -8,11 +8,17 @@ import {
   useAutoDiscovery,
   revokeAsync,
   TokenTypeHint,
+  refreshAsync,
+  TokenResponse,
 } from "expo-auth-session";
-import { openAuthSessionAsync } from "expo-web-browser";
+
+import {
+  openAuthSessionAsync,
+  maybeCompleteAuthSession,
+} from "expo-web-browser";
 import { createContext, useEffect, useState } from "react";
-import { DEFAULT_TOKEN_SCOPES } from "./constants";
-import { getStorage, setStorage, StorageKeys } from "./storage";
+import { DEFAULT_PLATFORM, DEFAULT_TOKEN_SCOPES } from "./constants";
+import StorageProvider from "./storage";
 import {
   LoginResponse,
   LogoutRequest,
@@ -25,8 +31,13 @@ import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 import Constants from "expo-constants";
 import { decode, encode } from "base-64";
+import { StorageKeys } from "./enums";
+
+// Required for expo web redirect callback
+maybeCompleteAuthSession();
+
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
-  undefined,
+  undefined
 );
 
 // global is unavailable for web `expo export` script
@@ -45,6 +56,7 @@ export const KindeAuthProvider = ({
     domain: string | undefined;
     clientId: string | undefined;
     scopes?: string;
+    platform?: "web" | "native";
   };
 }) => {
   const domain = config.domain;
@@ -55,9 +67,15 @@ export const KindeAuthProvider = ({
   if (clientId === undefined)
     throw new Error("KindeAuthProvider config.clientId prop is undefined");
 
+  // Handle the storage provider based on platform.
+  const platform = config.platform ?? DEFAULT_PLATFORM;
+  const { getStorage, setStorage } = StorageProvider(platform);
+
   const scopes = config.scopes?.split(" ") || DEFAULT_TOKEN_SCOPES.split(" ");
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isReady, setIsReady] = useState<boolean>(false);
+
   const redirectUri = makeRedirectUri({ native: Constants.isDevice });
 
   const discovery: DiscoveryDocument | null = {
@@ -69,14 +87,89 @@ export const KindeAuthProvider = ({
     const checkAuthentication = async () => {
       const token = await getStorage(StorageKeys.accessToken);
       if (token) {
+        const { valid } = await validateToken({ token, domain });
+        if (valid) {
+          setIsAuthenticated(true);
+          return;
+        }
+
+        // try to refresh if token is invalid
+        const refresh = await refreshToken();
+        if (!refresh.success) {
+          setIsAuthenticated(false);
+          return;
+        }
+
         setIsAuthenticated(true);
+        return;
+      } else {
+        setIsAuthenticated(false);
+        return;
       }
     };
-    checkAuthentication();
+
+    checkAuthentication().finally(() => setIsReady(true));
   }, []);
 
+  /**
+   * Process token response and store tokens in storage
+   * @param {TokenResponse} response
+   * @returns {Promise<void>}
+   */
+  const processTokenResponse = async (
+    response: TokenResponse
+  ): Promise<LoginResponse> => {
+    if (!response.accessToken) throw new Error("No access token returned");
+    if (response.idToken) {
+      const idTokenValidationResult = await validateToken({
+        token: response.idToken,
+        domain: domain,
+      });
+      if (idTokenValidationResult.valid) {
+        await setStorage(StorageKeys.idToken, response.idToken);
+      } else {
+        await setStorage(StorageKeys.idToken, null);
+        return {
+          success: false,
+          errorMessage: `Invalid id token: ${idTokenValidationResult.message}`,
+        };
+      }
+    }
+
+    const accessTokenValidationResult = await validateToken({
+      token: response.accessToken,
+      domain: domain,
+    });
+
+    if (accessTokenValidationResult.valid) {
+      await setStorage(StorageKeys.accessToken, response.accessToken);
+      setIsAuthenticated(true);
+    } else {
+      await setStorage(StorageKeys.accessToken, null);
+      return {
+        success: false,
+        errorMessage: `Invalid access token: ${accessTokenValidationResult.message}`,
+      };
+    }
+
+    // Dont store refresh token on web.
+    if (platform !== "web" && response.refreshToken)
+      await setStorage(StorageKeys.refreshToken, response.refreshToken);
+
+    return {
+      success: true,
+      accessToken: response.accessToken,
+      idToken: response.idToken!,
+    };
+  };
+
+  /**
+   * authenticate method
+   * @param {Partial<LoginMethodParams>} options
+   * @returns {Promise<LoginResponse>}
+   */
   const authenticate = async (
-    options: Partial<LoginMethodParams> = {},
+    options: Partial<LoginMethodParams> = {}
   ): Promise<LoginResponse> => {
     if (!redirectUri) {
       return {
@@ -109,49 +202,10 @@ export const KindeAuthProvider = ({
                 : undefined,
               redirectUri,
             },
-            discovery,
+            discovery
           );
 
-          if (exchangeCodeResponse.idToken) {
-            const idTokenValidationResult = await validateToken({
-              token: exchangeCodeResponse.idToken,
-              domain: domain,
-            });
-            if (idTokenValidationResult.valid) {
-              await setStorage(
-                StorageKeys.idToken,
-                exchangeCodeResponse.idToken,
-              );
-            } else {
-              console.error(
-                `Invalid id token`,
-                idTokenValidationResult.message,
-              );
-            }
-          }
-
-          const accessTokenValidationResult = await validateToken({
-            token: exchangeCodeResponse.accessToken,
-            domain: domain,
-          });
-          if (accessTokenValidationResult.valid) {
-            await setStorage(
-              StorageKeys.accessToken,
-              exchangeCodeResponse.accessToken,
-            );
-            setIsAuthenticated(true);
-          } else {
-            console.error(
-              `Invalid access token`,
-              accessTokenValidationResult.message,
-            );
-          }
-
-          return {
-            success: true,
-            accessToken: exchangeCodeResponse.accessToken,
-            idToken: exchangeCodeResponse.idToken!,
-          };
+          return processTokenResponse(exchangeCodeResponse);
         }
       } catch (err: any) {
         console.error(err);
@@ -167,7 +221,7 @@ export const KindeAuthProvider = ({
    * @returns {Promise<LoginResponse>}
    */
   const login = async (
-    options: Partial<LoginMethodParams> = {},
+    options: Partial<LoginMethodParams> = {}
   ): Promise<LoginResponse> => {
     return authenticate({ ...options, prompt: "login" });
   };
@@ -178,9 +232,32 @@ export const KindeAuthProvider = ({
    * @returns {Promise<LoginResponse>}
    */
   const register = async (
-    options: Partial<LoginMethodParams> = {},
+    options: Partial<LoginMethodParams> = {}
   ): Promise<LoginResponse> => {
     return authenticate({ ...options, prompt: "create" });
+  };
+
+  /**
+   * refresh token method
+   * @returns {Promise<LoginResponse>}
+   */
+  const refreshToken = async (): Promise<LoginResponse> => {
+    const refreshToken = await getStorage(StorageKeys.refreshToken);
+    if (!refreshToken)
+      return { success: false, errorMessage: "No refresh token" };
+    if (!discovery)
+      return { success: false, errorMessage: "No discovery document" };
+
+    // get accessToken by exchanging refreshToken
+    const exchangeCodeResponse = await refreshAsync(
+      {
+        clientId,
+        refreshToken,
+      },
+      discovery
+    );
+
+    return processTokenResponse(exchangeCodeResponse);
   };
 
   /**
@@ -193,7 +270,7 @@ export const KindeAuthProvider = ({
   }: Partial<LogoutRequest> = {}): Promise<LogoutResult> {
     const endSession = async () => {
       await openAuthSessionAsync(
-        `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`,
+        `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`
       );
       await setStorage(StorageKeys.accessToken, null);
       await setStorage(StorageKeys.idToken, null);
@@ -206,7 +283,7 @@ export const KindeAuthProvider = ({
         if (revokeToken) {
           revokeAsync(
             { token: accesstoken!, tokenTypeHint: TokenTypeHint.AccessToken },
-            discovery,
+            discovery
           )
             .then(async () => {
               await endSession();
@@ -230,7 +307,18 @@ export const KindeAuthProvider = ({
    * @returns {Promise<string | null>}
    */
   async function getAccessToken(): Promise<string | null> {
-    return getStorage(StorageKeys.accessToken);
+    const token = await getStorage(StorageKeys.accessToken);
+    if (!token) return null;
+
+    const { valid } = await validateToken({ token, domain });
+
+    if (!valid) {
+      const refresh = await refreshToken();
+      if (!refresh.success) return null;
+      return refresh.accessToken;
+    }
+
+    return token;
   }
 
   /**
@@ -266,7 +354,7 @@ export const KindeAuthProvider = ({
    * @returns { PermissionAccess }
    */
   async function getPermission(
-    permissionKey: string,
+    permissionKey: string
   ): Promise<PermissionAccess> {
     const token = await getDecodedToken();
 
@@ -325,7 +413,7 @@ export const KindeAuthProvider = ({
    * @returns { Promise<string | number | string[] | null> }
    */
   async function getClaim<T = JWTDecoded, V = string | number | string[]>(
-    keyName: keyof T,
+    keyName: keyof T
   ): Promise<{
     name: keyof T;
     value: V;
@@ -344,12 +432,20 @@ export const KindeAuthProvider = ({
     };
   }
 
+  /**
+   * Get the current organization code
+   * @returns { Promise<string | null> }
+   */
   async function getCurrentOrganization(): Promise<string | null> {
     return (
       (await getClaim<{ org_code: string }, string>("org_code"))?.value || null
     );
   }
 
+  /**
+   * Get the user organizations
+   * @returns { Promise<string[] | null> }
+   */
   async function getUserOrganizations(): Promise<string[] | null> {
     return (
       (
@@ -360,8 +456,13 @@ export const KindeAuthProvider = ({
     );
   }
 
+  /**
+   * Get the value of a feature flag
+   * @param name
+   * @returns { Promise<T | null> }
+   */
   async function getFlag<T = string | boolean | number>(
-    name: string,
+    name: string
   ): Promise<T | null> {
     const flags = (
       await getClaim<
@@ -377,6 +478,10 @@ export const KindeAuthProvider = ({
     return null;
   }
 
+  /**
+   * Get the user profile
+   * @returns { Promise<UserProfile | null> }
+   */
   async function getUserProfile(): Promise<UserProfile | null> {
     const idToken = await getDecodedToken<{
       sub: string;
@@ -401,6 +506,7 @@ export const KindeAuthProvider = ({
     login,
     logout,
     register,
+    refreshToken,
 
     getAccessToken,
     getIdToken,
@@ -420,6 +526,7 @@ export const KindeAuthProvider = ({
     getFlag,
 
     isAuthenticated,
+    isReady,
   };
 
   return (

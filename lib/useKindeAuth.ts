@@ -1,4 +1,5 @@
 import { useContext } from "react";
+
 import {
   LoginResponse,
   LogoutResult,
@@ -15,6 +16,7 @@ export interface KindeAuthHook {
   login: (options?: Partial<LoginMethodParams>) => Promise<LoginResponse>;
   register: (options?: Partial<LoginMethodParams>) => Promise<LoginResponse>;
   logout: (options?: Partial<LogoutRequest>) => Promise<LogoutResult>;
+  refreshToken: () => Promise<LoginResponse>;
   getAccessToken: () => Promise<string | null>;
   getIdToken: () => Promise<string | null>;
   getDecodedToken: () => Promise<
@@ -28,7 +30,7 @@ export interface KindeAuthHook {
   getPermissions: () => Promise<Permissions>;
   getClaims: <T = JWTDecoded>() => Promise<T | null>;
   getClaim: <T = JWTDecoded, V = string | number | string[]>(
-    keyName: keyof T,
+    keyName: keyof T
   ) => Promise<{
     name: keyof T;
     value: V;
@@ -36,9 +38,9 @@ export interface KindeAuthHook {
   getCurrentOrganization: () => Promise<string | null>;
   getUserOrganizations: () => Promise<string[] | null>;
   getUserProfile: () => Promise<UserProfile | null>;
-
   getFlag: <T = string | boolean | number>(name: string) => Promise<T | null>;
   isAuthenticated: boolean;
+  isReady: boolean;
 }
 
 export const useKindeAuthContext = (): KindeAuthHook => {

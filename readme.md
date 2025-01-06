@@ -19,6 +19,7 @@ The redirection URL is automatically computed using Expo Auth Session `makeRedir
 Setup the Kinde Provider in your App.js file.
 
 ```typescript
+import { Platform } from "react-native";
 import { KindeAuthProvider } from '@kinde/expo';
 
 export default function App() {
@@ -28,6 +29,8 @@ export default function App() {
        clientId: "your-client-id", // Required
        // Optional (default: "openid profile email offline")
        scopes: "openid profile email offline",
+       // Optional (default: "native")
+       platform: Platform.OS !== "web" ? "native" : "web"
      }}>
       <!-- Your application code -->
     </KindeAuthProvider>
