@@ -1,4 +1,8 @@
-import { LoginMethodParams, mapLoginMethodParamsForUrl, PromptTypes } from "@kinde/js-utils";
+import {
+  LoginMethodParams,
+  mapLoginMethodParamsForUrl,
+  PromptTypes,
+} from "@kinde/js-utils";
 import { validateToken } from "@kinde/jwt-validator";
 import {
   AuthRequest,
