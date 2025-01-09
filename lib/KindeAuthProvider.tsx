@@ -1,4 +1,4 @@
-import { LoginMethodParams, mapLoginMethodParamsForUrl } from "@kinde/js-utils";
+import { LoginMethodParams, mapLoginMethodParamsForUrl, PromptTypes } from "@kinde/js-utils";
 import { validateToken } from "@kinde/jwt-validator";
 import {
   AuthRequest,
@@ -169,7 +169,7 @@ export const KindeAuthProvider = ({
   const login = async (
     options: Partial<LoginMethodParams> = {},
   ): Promise<LoginResponse> => {
-    return authenticate({ ...options, prompt: "login" });
+    return authenticate({ ...options, prompt: PromptTypes.login });
   };
 
   /**
@@ -180,7 +180,7 @@ export const KindeAuthProvider = ({
   const register = async (
     options: Partial<LoginMethodParams> = {},
   ): Promise<LoginResponse> => {
-    return authenticate({ ...options, prompt: "create" });
+    return authenticate({ ...options, prompt: PromptTypes.create });
   };
 
   /**
