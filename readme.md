@@ -24,7 +24,7 @@ import { KindeAuthProvider } from '@kinde/expo';
 export default function App() {
   return (
     <KindeAuthProvider config={{
-       domain: "your-app.kinde.com", // Required
+       domain: "https://your-app.kinde.com", // Required
        clientId: "your-client-id", // Required
        // Optional (default: "openid profile email offline")
        scopes: "openid profile email offline",
