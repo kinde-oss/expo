@@ -1,7 +1,18 @@
 import {
+  ExpoSecureStore,
   LoginMethodParams,
   mapLoginMethodParamsForUrl,
   PromptTypes,
+  setActiveStorage,
+  StorageKeys,
+  getClaim,
+  getClaims,
+  getCurrentOrganization,
+  getRoles,
+  getFlag,
+  getUserProfile,
+  getUserOrganizations,
+  setRefreshTimer
 } from "@kinde/js-utils";
 import { validateToken } from "@kinde/jwt-validator";
 import {
@@ -16,14 +27,12 @@ import {
 import { openAuthSessionAsync } from "expo-web-browser";
 import { createContext, useEffect, useState } from "react";
 import { DEFAULT_TOKEN_SCOPES } from "./constants";
-import { getStorage, setStorage, StorageKeys } from "./storage";
 import {
   LoginResponse,
   LogoutRequest,
   LogoutResult,
   PermissionAccess,
   Permissions,
-  UserProfile,
 } from "./types";
 import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
@@ -39,6 +48,9 @@ if (typeof global !== "undefined") {
   global.btoa = encode;
   global.atob = decode;
 }
+
+const storage = new ExpoSecureStore();
+setActiveStorage(storage);
 
 export const KindeAuthProvider = ({
   children,
@@ -71,7 +83,7 @@ export const KindeAuthProvider = ({
 
   useEffect(() => {
     const checkAuthentication = async () => {
-      const token = await getStorage(StorageKeys.accessToken);
+      const token = await getAccessToken();
       if (token) {
         setIsAuthenticated(true);
       }
@@ -122,7 +134,7 @@ export const KindeAuthProvider = ({
               domain: domain,
             });
             if (idTokenValidationResult.valid) {
-              await setStorage(
+              storage.setSessionItem(
                 StorageKeys.idToken,
                 exchangeCodeResponse.idToken,
               );
@@ -139,7 +151,7 @@ export const KindeAuthProvider = ({
             domain: domain,
           });
           if (accessTokenValidationResult.valid) {
-            await setStorage(
+            storage.setSessionItem(
               StorageKeys.accessToken,
               exchangeCodeResponse.accessToken,
             );
@@ -150,6 +162,14 @@ export const KindeAuthProvider = ({
               accessTokenValidationResult.message,
             );
           }
+
+          storage.setSessionItem(
+            StorageKeys.refreshToken,
+            exchangeCodeResponse.refreshToken,
+          );
+
+          setRefreshTimer(exchangeCodeResponse.expiresIn);
+          
 
           return {
             success: true,
@@ -199,13 +219,17 @@ export const KindeAuthProvider = ({
       await openAuthSessionAsync(
         `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`,
       );
-      await setStorage(StorageKeys.accessToken, null);
-      await setStorage(StorageKeys.idToken, null);
+      await storage.setItems({
+        [StorageKeys.accessToken]: null,
+        [StorageKeys.idToken]: null,
+      });
       setIsAuthenticated(false);
     };
 
     return new Promise(async (resolve) => {
-      const accesstoken = await getStorage(StorageKeys.accessToken);
+      const accesstoken = (await storage.getSessionItem(
+        StorageKeys.accessToken,
+      )) as string;
       if (accesstoken && discovery) {
         if (revokeToken) {
           revokeAsync(
@@ -234,7 +258,7 @@ export const KindeAuthProvider = ({
    * @returns {Promise<string | null>}
    */
   async function getAccessToken(): Promise<string | null> {
-    return getStorage(StorageKeys.accessToken);
+    return (await storage.getSessionItem(StorageKeys.accessToken)) as string;
   }
 
   /**
@@ -242,7 +266,7 @@ export const KindeAuthProvider = ({
    * @returns {Promise<string | null>}
    */
   async function getIdToken(): Promise<string | null> {
-    return getStorage(StorageKeys.idToken);
+    return (await storage.getSessionItem(StorageKeys.idToken)) as string;
   }
 
   /**
@@ -290,10 +314,6 @@ export const KindeAuthProvider = ({
     };
   }
 
-  /**
-   * Get all permissions
-   * @returns { Promise<Permissions> }
-   */
   async function getPermissions(): Promise<Permissions> {
     const token = await getDecodedToken();
 
@@ -311,96 +331,6 @@ export const KindeAuthProvider = ({
     };
   }
 
-  /**
-   * get all claims from the token
-   * @returns { Promise<T | null> }
-   */
-  async function getClaims<T = JWTDecoded>(): Promise<T | null> {
-    const token = await getAccessToken();
-    if (!token) {
-      return null;
-    }
-    return jwtDecoder<T>(token);
-  }
-
-  /**
-   *
-   * @param keyName key to get from the token
-   * @returns { Promise<string | number | string[] | null> }
-   */
-  async function getClaim<T = JWTDecoded, V = string | number | string[]>(
-    keyName: keyof T,
-  ): Promise<{
-    name: keyof T;
-    value: V;
-  } | null> {
-    const token = await getAccessToken();
-    if (!token) {
-      return null;
-    }
-    const claims = jwtDecoder<T>(token);
-    if (!claims) {
-      return null;
-    }
-    return {
-      name: keyName,
-      value: claims[keyName] as V,
-    };
-  }
-
-  async function getCurrentOrganization(): Promise<string | null> {
-    return (
-      (await getClaim<{ org_code: string }, string>("org_code"))?.value || null
-    );
-  }
-
-  async function getUserOrganizations(): Promise<string[] | null> {
-    return (
-      (
-        await getDecodedToken<{
-          org_codes: string[];
-        }>("idToken")
-      )?.org_codes || null
-    );
-  }
-
-  async function getFlag<T = string | boolean | number>(
-    name: string,
-  ): Promise<T | null> {
-    const flags = (
-      await getClaim<
-        { feature_flags: string },
-        Record<string, { t: "b" | "i" | "s"; v: T }>
-      >("feature_flags")
-    )?.value;
-
-    if (name && flags) {
-      const value = flags[name];
-      return value.v;
-    }
-    return null;
-  }
-
-  async function getUserProfile(): Promise<UserProfile | null> {
-    const idToken = await getDecodedToken<{
-      sub: string;
-      given_name: string;
-      family_name: string;
-      email: string;
-      picture: string;
-    }>("idToken");
-    if (!idToken) {
-      return null;
-    }
-    return {
-      id: idToken.sub,
-      givenName: idToken.given_name,
-      familyName: idToken.family_name,
-      email: idToken.email,
-      picture: idToken.picture,
-    };
-  }
-
   const value: KindeAuthHook = {
     login,
     logout,
@@ -410,18 +340,75 @@ export const KindeAuthProvider = ({
     getIdToken,
     getDecodedToken,
 
-    getPermission,
-    getPermissions,
+    /**
+     *
+     * @param keyName key to get from the token
+     * @returns { Promise<string | number | string[] | null> }
+     */
+    getClaim: async <T = JWTDecoded,>(
+      ...args: Parameters<typeof getClaim<T>>
+    ) => {
+      const { getClaim } = await import("@kinde/js-utils");
+      return getClaim(...args);
+    },
+    // /**
+    //  * get all claims from the token
+    //  * @returns { Promise<T | null> }
+    //  */
+    getClaims: async <T = JWTDecoded,>(
+      ...args: Parameters<typeof getClaims<T>>
+    ) => {
+      const { getClaims } = await import("@kinde/js-utils");
+      return getClaims(...args);
+    },
 
-    getClaims,
-    getClaim,
+    getCurrentOrganization: async (
+      ...args: Parameters<typeof getCurrentOrganization>
+    ) => {
+      const { getCurrentOrganization } = await import("@kinde/js-utils");
+      return getCurrentOrganization(...args);
+    },
+    getFlag: async (...args: Parameters<typeof getFlag>) => {
+      const { getFlag } = await import("@kinde/js-utils");
+      return getFlag(...args);
+    },
+    getUserProfile: async (...args: Parameters<typeof getUserProfile>) => {
+      const { getUserProfile } = await import("@kinde/js-utils");
+      return getUserProfile(...args);
+    },
 
-    getUserProfile,
+    /**
+     *
+     * @param permissionKey gets the value of a permission
+     * @returns { PermissionAccess }
+     */
+    getPermission: async (...args: Parameters<typeof getPermission>) => {
+      const { getPermission } = await import("@kinde/js-utils");
+      return getPermission(...args);
+    },
 
-    getCurrentOrganization,
-    getUserOrganizations,
-
-    getFlag,
+    /**
+     * Get all permissions
+     * @returns { Promise<Permissions> }
+     */
+    getPermissions: async (...args: Parameters<typeof getPermissions>) => {
+      const { getPermissions } = await import("@kinde/js-utils");
+      return getPermissions(...args);
+    },
+    getUserOrganizations: async (
+      ...args: Parameters<typeof getUserOrganizations>
+    ) => {
+      const { getUserOrganizations } = await import("@kinde/js-utils");
+      return getUserOrganizations(...args);
+    },
+    getRoles: async (...args: Parameters<typeof getRoles>) => {
+      const { getRoles } = await import("@kinde/js-utils");
+      return getRoles(...args);
+    },
+    // refreshToken: async (...args: Parameters<typeof refreshToken>) => {
+    //   const { refreshToken } = await import("@kinde/js-utils");
+    //   return refreshToken(...args);
+    // },
 
     isAuthenticated,
   };

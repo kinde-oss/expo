@@ -6,17 +6,20 @@ settings:
 
 dependencies:
   '@kinde/js-utils':
-    specifier: 0.1.0-7
-    version: 0.1.0-7
+    specifier: 0.7.1
+    version: 0.7.1(expo@51.0.18)
   '@kinde/jwt-decoder':
     specifier: ^0.2.0
     version: 0.2.0
   '@kinde/jwt-validator':
-    specifier: 0.3.0-1
-    version: 0.3.0-1
+    specifier: ^0.3.0-3
+    version: 0.3.0
   '@vitejs/plugin-react':
     specifier: ^4.3.1
     version: 4.3.1(vite@5.3.3)
+  base-64:
+    specifier: ^1.0.0
+    version: 1.0.0
   dotenv:
     specifier: ^16.4.5
     version: 16.4.5
@@ -40,6 +43,9 @@ dependencies:
     version: 0.74.3(@babel/core@7.24.7)(@babel/preset-env@7.24.7)(@types/react@18.3.3)(react@18.3.1)
 
 devDependencies:
+  '@types/base-64':
+    specifier: ^1.0.2
+    version: 1.0.2
   '@types/node':
     specifier: ^20.12.7
     version: 20.14.10
@@ -2194,18 +2200,22 @@ packages:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  /@kinde/js-utils@0.1.0-7:
-    resolution: {integrity: sha512-g6AEzUV1cPATVWfYdUAml3nibGQljB23bVDpbnyDYFDoaVr2wVPp8nM+xle+enPThA1gXOPRNk34h7XLioiZxA==}
+  /@kinde/js-utils@0.7.1(expo@51.0.18):
+    resolution: {integrity: sha512-ercMx/UZNxJrzqFC7vQmPI8x2XnNr4iUfpHv8EC3E7ZmUpDbf5oFpKoNwZ9rkk8WsKhZ23u4zOMwfdzqlSLEdQ==}
     dependencies:
-      jose: 5.6.3
+      '@kinde/jwt-decoder': 0.2.0
+    optionalDependencies:
+      expo-secure-store: 13.0.2(expo@51.0.18)
+    transitivePeerDependencies:
+      - expo
     dev: false
 
   /@kinde/jwt-decoder@0.2.0:
     resolution: {integrity: sha512-dqtwCmAvywOVLkkUfp4UbqdvVLsK0cvHsJhU3gDY9rgjAdZhGw0vCreBW6j3MFLxbi6cZm7pMU7/O5SJgvN5Rw==}
     dev: false
 
-  /@kinde/jwt-validator@0.3.0-1:
-    resolution: {integrity: sha512-MfWEukYhnFsAlUDPgeDQWxm9uaCK2dWKsMp/em5FItv/8083wg3lRsHtUHMFJeefMdYFc2YrpBK6ahTte2s1QQ==}
+  /@kinde/jwt-validator@0.3.0:
+    resolution: {integrity: sha512-E6NvzIfRAvt4FsqIkOz2YA0ay4m1doUTyjU7nIKzOabwZus35prGwjgdoDnF58TjTdSfDBtnNkHCZ2kUPPBwQg==}
     dependencies:
       '@kinde/jwt-decoder': 0.2.0
       jsrsasign: 11.1.0
@@ -2895,6 +2905,10 @@ packages:
       '@babel/types': 7.24.7
     dev: false
 
+  /@types/base-64@1.0.2:
+    resolution: {integrity: sha512-uPgKMmM9fmn7I+Zi6YBqctOye4SlJsHKcisjHIMWpb2YKZRc36GpKyNuQ03JcT+oNXg1m7Uv4wU94EVltn8/cw==}
+    dev: true
+
   /@types/estree@1.0.5:
     resolution: {integrity: sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==}
 
@@ -3398,6 +3412,10 @@ packages:
 
   /balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
+
+  /base-64@1.0.0:
+    resolution: {integrity: sha512-kwDPIFCGx0NZHog36dj+tHiwP4QMzsZ3AgMViUBKI0+V5n4U0ufTCUMhnQ04diaRI8EX/QcPfql7zlhZ7j4zgg==}
+    dev: false
 
   /base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
@@ -5331,10 +5349,6 @@ packages:
 
   /join-component@1.1.0:
     resolution: {integrity: sha512-bF7vcQxbODoGK1imE2P9GS9aw4zD0Sd+Hni68IMZLj7zRnquH7dXUmMw9hDI5S/Jzt7q+IyTXN0rSg2GI0IKhQ==}
-
-  /jose@5.6.3:
-    resolution: {integrity: sha512-1Jh//hEEwMhNYPDDLwXHa2ePWgWiFNNUadVmguAAw2IJ6sj9mNxV5tGXJNqlMkJAybF6Lgw1mISDxTePP/187g==}
-    dev: false
 
   /js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
