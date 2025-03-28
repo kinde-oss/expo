@@ -5,9 +5,7 @@ The Kinde Expo SDK allows developers to quickly and securely integrate a new or 
 ## **Installation**
 
 ```bash
-npm i @kinde/expo
-yarn add @kinde/expo
-pnpm add @kinde/expo
+npx nypm add @kinde/expo
 ```
 
 ## **Environment variables**

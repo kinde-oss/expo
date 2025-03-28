@@ -36,8 +36,9 @@ export interface KindeAuthHook {
   getCurrentOrganization: () => Promise<string | null>;
   getUserOrganizations: () => Promise<string[] | null>;
   getUserProfile: () => Promise<UserProfile | null>;
-
+  getRoles: () => Promise<string[]>;
   getFlag: <T = string | boolean | number>(name: string) => Promise<T | null>;
+  // refreshToken: () => Promise<RefreshTokenResult>;
   isAuthenticated: boolean;
 }
 
