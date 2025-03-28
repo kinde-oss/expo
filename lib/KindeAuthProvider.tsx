@@ -1,10 +1,5 @@
-import {
-  ExpoSecureStore,
+import type {
   LoginMethodParams,
-  mapLoginMethodParamsForUrl,
-  PromptTypes,
-  setActiveStorage,
-  StorageKeys,
   getClaim,
   getClaims,
   getCurrentOrganization,
@@ -12,7 +7,15 @@ import {
   getFlag,
   getUserProfile,
   getUserOrganizations,
-  setRefreshTimer
+} from "@kinde/js-utils";
+import {
+  ExpoSecureStore,
+  mapLoginMethodParamsForUrl,
+  PromptTypes,
+  setActiveStorage,
+  StorageKeys,
+  setRefreshTimer,
+  refreshToken,
 } from "@kinde/js-utils";
 import { validateToken } from "@kinde/jwt-validator";
 import {
@@ -20,7 +23,6 @@ import {
   DiscoveryDocument,
   exchangeCodeAsync,
   makeRedirectUri,
-  useAutoDiscovery,
   revokeAsync,
   TokenTypeHint,
 } from "expo-auth-session";
@@ -77,7 +79,10 @@ export const KindeAuthProvider = ({
   const redirectUri = makeRedirectUri({ native: Constants.isDevice });
 
   const discovery: DiscoveryDocument | null = {
-    ...useAutoDiscovery(domain),
+    authorizationEndpoint: `${domain}/oauth2/auth`,
+    tokenEndpoint: `${domain}/oauth2/token`,
+    endSessionEndpoint: `${domain}/logout`,
+    userInfoEndpoint: `${domain}/oauth2/v2/user_profile`,
     revocationEndpoint: `${domain}/oauth2/revoke`,
   };
 
@@ -110,79 +115,84 @@ export const KindeAuthProvider = ({
       },
     });
 
-    if (discovery) {
-      try {
-        const codeResponse = await request.promptAsync(discovery, {
+    try {
+      const codeResponse = await request.promptAsync(
+        {
+          authorizationEndpoint: `${domain}/oauth2/auth`,
+        } as DiscoveryDocument,
+        {
           showInRecents: true,
-        });
-        if (request && codeResponse?.type === "success" && discovery) {
-          const exchangeCodeResponse = await exchangeCodeAsync(
-            {
-              clientId,
-              code: codeResponse.params.code,
-              extraParams: request.codeVerifier
-                ? { code_verifier: request.codeVerifier }
-                : undefined,
-              redirectUri,
-            },
-            discovery,
-          );
+        },
+      );
+      if (request && codeResponse?.type === "success") {
+        const exchangeCodeResponse = await exchangeCodeAsync(
+          {
+            clientId,
+            code: codeResponse.params.code,
+            extraParams: request.codeVerifier
+              ? { code_verifier: request.codeVerifier }
+              : undefined,
+            redirectUri,
+          },
+          { tokenEndpoint: `${domain}/oauth2/token` },
+        );
 
-          if (exchangeCodeResponse.idToken) {
-            const idTokenValidationResult = await validateToken({
-              token: exchangeCodeResponse.idToken,
-              domain: domain,
-            });
-            if (idTokenValidationResult.valid) {
-              storage.setSessionItem(
-                StorageKeys.idToken,
-                exchangeCodeResponse.idToken,
-              );
-            } else {
-              console.error(
-                `Invalid id token`,
-                idTokenValidationResult.message,
-              );
-            }
-          }
-
-          const accessTokenValidationResult = await validateToken({
-            token: exchangeCodeResponse.accessToken,
+        if (exchangeCodeResponse.idToken) {
+          const idTokenValidationResult = await validateToken({
+            token: exchangeCodeResponse.idToken,
             domain: domain,
           });
-          if (accessTokenValidationResult.valid) {
+
+          if (idTokenValidationResult.valid) {
             storage.setSessionItem(
-              StorageKeys.accessToken,
-              exchangeCodeResponse.accessToken,
+              StorageKeys.idToken,
+              exchangeCodeResponse.idToken,
             );
-            setIsAuthenticated(true);
           } else {
-            console.error(
-              `Invalid access token`,
-              accessTokenValidationResult.message,
-            );
+            console.error(`Invalid id token`, idTokenValidationResult.message);
           }
-
-          storage.setSessionItem(
-            StorageKeys.refreshToken,
-            exchangeCodeResponse.refreshToken,
-          );
-
-          setRefreshTimer(exchangeCodeResponse.expiresIn);
-          
-
-          return {
-            success: true,
-            accessToken: exchangeCodeResponse.accessToken,
-            idToken: exchangeCodeResponse.idToken!,
-          };
         }
-      } catch (err: any) {
-        console.error(err);
-        return { success: false, errorMessage: err.message };
+
+        const accessTokenValidationResult = await validateToken({
+          token: exchangeCodeResponse.accessToken,
+          domain: domain,
+        });
+        if (accessTokenValidationResult.valid) {
+          storage.setSessionItem(
+            StorageKeys.accessToken,
+            exchangeCodeResponse.accessToken,
+          );
+          setIsAuthenticated(true);
+        } else {
+          console.error(
+            `Invalid access token`,
+            accessTokenValidationResult.message,
+          );
+        }
+
+        storage.setSessionItem(
+          StorageKeys.refreshToken,
+          exchangeCodeResponse.refreshToken,
+        );
+
+        setRefreshTimer(exchangeCodeResponse.expiresIn || 60, async () => {
+          refreshToken({ domain, clientId });
+        });
+
+        return {
+          success: true,
+          accessToken: exchangeCodeResponse.accessToken,
+          idToken: exchangeCodeResponse.idToken!,
+        };
       }
+      return {
+        success: false,
+        errorMessage: "Unknown error",
+      };
+    } catch (err: any) {
+      console.error(err);
+      return { success: false, errorMessage: err.message };
     }
-    return { success: false, errorMessage: "No discovery document" };
   };
 
   /**
