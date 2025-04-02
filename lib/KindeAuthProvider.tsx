@@ -229,10 +229,8 @@ export const KindeAuthProvider = ({
       await openAuthSessionAsync(
         `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`,
       );
-      await storage.setItems({
-        [StorageKeys.accessToken]: null,
-        [StorageKeys.idToken]: null,
-      });
+      await storage.removeItems(StorageKeys.accessToken, StorageKeys.idToken)
+      
       setIsAuthenticated(false);
     };
 
