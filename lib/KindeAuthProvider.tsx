@@ -226,9 +226,6 @@ export const KindeAuthProvider = ({
     revokeToken,
   }: Partial<LogoutRequest> = {}): Promise<LogoutResult> {
     const endSession = async () => {
-      await openAuthSessionAsync(
-        `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`,
-      );
       await storage.removeItems(StorageKeys.accessToken, StorageKeys.idToken)
       
       setIsAuthenticated(false);
@@ -253,6 +250,9 @@ export const KindeAuthProvider = ({
               resolve({ success: false });
             });
         } else {
+          await openAuthSessionAsync(
+            `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`,
+          );
           await endSession();
           resolve({ success: true });
         }
