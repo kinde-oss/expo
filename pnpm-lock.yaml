@@ -12,8 +12,8 @@ dependencies:
     specifier: ^0.2.0
     version: 0.2.0
   '@kinde/jwt-validator':
-    specifier: ^0.3.0-3
-    version: 0.3.0
+    specifier: ^0.4.0
+    version: 0.4.0
   '@vitejs/plugin-react':
     specifier: ^4.3.1
     version: 4.3.1(vite@5.3.3)
@@ -2219,8 +2219,8 @@ packages:
     resolution: {integrity: sha512-dqtwCmAvywOVLkkUfp4UbqdvVLsK0cvHsJhU3gDY9rgjAdZhGw0vCreBW6j3MFLxbi6cZm7pMU7/O5SJgvN5Rw==}
     dev: false
 
-  /@kinde/jwt-validator@0.3.0:
-    resolution: {integrity: sha512-E6NvzIfRAvt4FsqIkOz2YA0ay4m1doUTyjU7nIKzOabwZus35prGwjgdoDnF58TjTdSfDBtnNkHCZ2kUPPBwQg==}
+  /@kinde/jwt-validator@0.4.0:
+    resolution: {integrity: sha512-aseXLTD/rh/rZ2v85Xy493CEtuC49MA4Hbt6ObccqSJfIGLAeMrAtBh2m9DleigVkMuZ/99/U4PqLnaVDLt5OQ==}
     dependencies:
       '@kinde/jwt-decoder': 0.2.0
       jsrsasign: 11.1.0
