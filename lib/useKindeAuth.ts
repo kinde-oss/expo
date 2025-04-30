@@ -10,6 +10,8 @@ import {
 import { LoginMethodParams, Role } from "@kinde/js-utils";
 import { KindeAuthContext } from "./KindeAuthProvider";
 import { JWTDecoded } from "@kinde/jwt-decoder";
+import { RefreshType } from "@kinde/js-utils/dist/utils/token/refreshToken";
+import { RefreshTokenResult } from "@kinde/js-utils/dist/utils/token/refreshToken";
 
 export interface KindeAuthHook {
   login: (options?: Partial<LoginMethodParams>) => Promise<LoginResponse>;
@@ -38,7 +40,12 @@ export interface KindeAuthHook {
   getUserProfile: () => Promise<UserProfile | null>;
   getRoles: () => Promise<Role[]>;
   getFlag: <T = string | boolean | number>(name: string) => Promise<T | null>;
-  // refreshToken: () => Promise<RefreshTokenResult>;
+  refreshToken: (args: {
+    domain: string;
+    clientId: string;
+    refreshType?: RefreshType;
+    onRefresh?: (data: RefreshTokenResult) => void;
+  }) => Promise<RefreshTokenResult>;
   isAuthenticated: boolean;
 }
 
