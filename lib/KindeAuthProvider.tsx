@@ -7,6 +7,7 @@ import type {
   getFlag,
   getUserProfile,
   getUserOrganizations,
+  SessionManager,
 } from "@kinde/js-utils";
 import {
   ExpoSecureStore,
@@ -51,9 +52,6 @@ if (typeof global !== "undefined") {
   global.atob = decode;
 }
 
-const storage = new ExpoSecureStore();
-setActiveStorage(storage);
-
 export const KindeAuthProvider = ({
   children,
   config,
@@ -77,6 +75,25 @@ export const KindeAuthProvider = ({
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const redirectUri = makeRedirectUri({ native: Constants.isDevice });
+
+  const [storage, setStorage] = useState<SessionManager>();
+  const [isStorageReady, setIsStorageReady] = useState(false);
+
+  useEffect(() => {
+    const initializeStorage = async () => {
+      try {
+        const ExpoStore = await ExpoSecureStore.default();
+        const storageInstance = new ExpoStore();
+        setActiveStorage(storageInstance);
+        setStorage(storageInstance);
+        setIsStorageReady(true);
+      } catch (error) {
+        console.error("Failed to initialize storage:", error);
+      }
+    };
+
+    initializeStorage();
+  }, []);
 
   const discovery: DiscoveryDocument | null = {
     authorizationEndpoint: `${domain}/oauth2/auth`,
@@ -105,6 +122,14 @@ export const KindeAuthProvider = ({
         errorMessage: "This library only works on a mobile device",
       };
     }
+
+    if (!storage) {
+      return {
+        success: false,
+        errorMessage: "Storage is not ready",
+      };
+    }
+
     const request = new AuthRequest({
       clientId,
       redirectUri,
@@ -225,9 +250,14 @@ export const KindeAuthProvider = ({
   async function logout({
     revokeToken,
   }: Partial<LogoutRequest> = {}): Promise<LogoutResult> {
+    if (!storage) {
+      return Promise.resolve({
+        success: false,
+      });
+    }
     const cleanup = async () => {
-      await storage.removeItems(StorageKeys.accessToken, StorageKeys.idToken)
-      
+      await storage.removeItems(StorageKeys.accessToken, StorageKeys.idToken);
+
       setIsAuthenticated(false);
     };
 
@@ -266,6 +296,9 @@ export const KindeAuthProvider = ({
    * @returns {Promise<string | null>}
    */
   async function getAccessToken(): Promise<string | null> {
+    if (!storage) {
+      return Promise.resolve(null);
+    }
     return (await storage.getSessionItem(StorageKeys.accessToken)) as string;
   }
 
@@ -274,6 +307,9 @@ export const KindeAuthProvider = ({
    * @returns {Promise<string | null>}
    */
   async function getIdToken(): Promise<string | null> {
+    if (!storage) {
+      return Promise.resolve(null);
+    }
     return (await storage.getSessionItem(StorageKeys.idToken)) as string;
   }
 
@@ -420,6 +456,10 @@ export const KindeAuthProvider = ({
 
     isAuthenticated,
   };
+
+  if (!isStorageReady || !storage) {
+    return null;
+  }
 
   return (
     <KindeAuthContext.Provider value={value}>
