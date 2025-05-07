@@ -9,6 +9,8 @@ import {
   getUserOrganizations,
   SessionManager,
   UserProfile,
+  RefreshTokenResult,
+  RefreshType,
 } from "@kinde/js-utils";
 import {
   ExpoSecureStore,
@@ -48,8 +50,6 @@ import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 import Constants from "expo-constants";
 import { decode, encode } from "base-64";
-import { RefreshTokenResult } from "@kinde/js-utils/dist/utils/token/refreshToken";
-import { RefreshType } from "@kinde/js-utils/dist/utils/token/refreshToken";
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
 );

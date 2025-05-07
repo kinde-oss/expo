@@ -7,11 +7,14 @@ import {
   LogoutRequest,
   UserProfile,
 } from "./types";
-import { LoginMethodParams, Role } from "@kinde/js-utils";
+import {
+  LoginMethodParams,
+  Role,
+  RefreshType,
+  RefreshTokenResult,
+} from "@kinde/js-utils";
 import { KindeAuthContext } from "./KindeAuthProvider";
 import { JWTDecoded } from "@kinde/jwt-decoder";
-import { RefreshType } from "@kinde/js-utils/dist/utils/token/refreshToken";
-import { RefreshTokenResult } from "@kinde/js-utils/dist/utils/token/refreshToken";
 
 export interface KindeAuthHook {
   login: (options?: Partial<LoginMethodParams>) => Promise<LoginResponse>;

@@ -9,14 +9,17 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: resolve(__dirname, "lib/main.ts"),
+      entry: {
+        index: resolve(__dirname, "lib/index.ts"),
+        utils: resolve(__dirname, "lib/utils/index.ts"),
+      },
       formats: ["es", "cjs"],
       name: "@kinde/expo",
-      fileName: "kinde-expo",
+      fileName: (format, entryName) =>
+        format === "es" ? `${entryName}.mjs` : `${entryName}.cjs`,
     },
-    target: "es2020", // Or use a more specific target based on your needs
-    outDir: resolve(__dirname, "./dist"), // Safer path resolution
-
+    target: "esnext",
+    outDir: "dist",
     rollupOptions: {
       external: [
         "react",
@@ -38,7 +41,6 @@ export default defineConfig({
       },
     },
   },
-  root: "lib",
   resolve: {
     alias: {
       "react-native": "react-native-web",
@@ -47,7 +49,10 @@ export default defineConfig({
     extensions: [".web.js", ".js", ".ts", ".tsx", ".jsx"],
   },
   plugins: [
-    dts({ insertTypesEntry: true, outDir: resolve(__dirname, "./dist") }),
     react(),
+    dts({
+      include: ["lib/**/*.ts", "lib/**/*.tsx"],
+      exclude: ["**/*.test.tsx", "**/*.test.ts", "**/*.spec.ts"],
+    }),
   ],
 });
