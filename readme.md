@@ -79,6 +79,33 @@ export default function Authentication() {
 }
 ```
 
+## Using Utility Functions
+
+All utility functions from `@kinde/js-utils` are available through `@kinde/expo/utils` and also through the `useKindeAuth` hook. This allows you to use these utilities directly in your Expo application.
+
+```tsx
+import { getUserProfile, getFlag, getRoles } from "@kinde/expo/utils";
+
+// Example usage
+const checkUserProfile = async () => {
+  const profile = await getUserProfile();
+  console.log("User profile:", profile);
+};
+```
+
+Common utility functions include:
+
+- `getUserProfile` - Get the current user's profile
+- `getFlag` - Check feature flag values
+- `getRoles` - Get the current user's roles
+- `getCurrentOrganization` - Get the current organization
+- `getUserOrganizations` - Get all organizations the user belongs to
+- `getPermission` - get a single permission value
+- `getPermissions` - get all user permissions
+- `getClaim` - Get a specific claim from the token
+- `getClaims` - Get all claims from the token
+- `refreshToken` - Manually refresh the access token
+
 ## Contributing
 
 If you'd like to contribute to this project, please follow these steps:

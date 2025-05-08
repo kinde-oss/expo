@@ -298,7 +298,13 @@ export const KindeAuthProvider = ({
   const login = async (
     options: Partial<LoginMethodParams> = {},
   ): Promise<LoginResponse> => {
-    return authenticate({ ...options, prompt: PromptTypes.login });
+    const login = await authenticate({ ...options, prompt: PromptTypes.login });
+    const user = await getUserProfile();
+    if (user) {
+      callbacks?.onEvent?.(AuthEvent.login, login, contextValue);
+      callbacks?.onSuccess?.(user, {}, contextValue);
+    }
+    return login;
   };
 
   /**
@@ -309,7 +315,16 @@ export const KindeAuthProvider = ({
   const register = async (
     options: Partial<LoginMethodParams> = {},
   ): Promise<LoginResponse> => {
-    return authenticate({ ...options, prompt: PromptTypes.create });
+    const register = await authenticate({
+      ...options,
+      prompt: PromptTypes.create,
+    });
+    const user = await getUserProfile();
+    if (user) {
+      callbacks?.onEvent?.(AuthEvent.register, register, contextValue);
+      callbacks?.onSuccess?.(user, {}, contextValue);
+    }
+    return register;
   };
 
   /**
@@ -327,7 +342,7 @@ export const KindeAuthProvider = ({
     }
     const cleanup = async () => {
       await storage.removeItems(StorageKeys.accessToken, StorageKeys.idToken);
-
+      callbacks?.onEvent?.(AuthEvent.logout, {}, contextValue);
       setIsAuthenticated(false);
     };
 
