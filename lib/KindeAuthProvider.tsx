@@ -33,10 +33,10 @@ import {
 import { openAuthSessionAsync } from "expo-web-browser";
 import {
   createContext,
-  useCallback,
   useEffect,
   useState,
   useMemo,
+  useCallback,
 } from "react";
 import { DEFAULT_TOKEN_SCOPES } from "./constants";
 import {
@@ -149,13 +149,11 @@ export const KindeAuthProvider = ({
         }
       } catch (error: unknown) {
         console.error("Failed to initialize storage:", error);
-        let errorDescription = "";
 
-        errorDescription = `Failed to initialize storage: ${error instanceof Error ? error.message : "Unknown error"}`;
         callbacks?.onError?.(
           {
             error: "ERR_STORAGE",
-            errorDescription,
+            errorDescription: `Failed to initialize storage: ${error instanceof Error ? error.message : "Unknown error"}`,
           },
           {},
           contextValue,
@@ -592,10 +590,8 @@ export const KindeAuthProvider = ({
   }, [login, logout, register, isStorageReady, storage, isAuthenticated]);
 
   const onRefresh = useCallback(
-    (data: RefreshTokenResult): void => {
-      if (callbacks?.onEvent) {
-        callbacks.onEvent(AuthEvent.tokenRefreshed, data, contextValue);
-      }
+    (data: RefreshTokenResult) => {
+      callbacks?.onEvent?.(AuthEvent.tokenRefreshed, data, contextValue);
     },
     [callbacks, contextValue],
   );
