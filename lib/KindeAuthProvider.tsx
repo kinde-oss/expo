@@ -147,11 +147,21 @@ export const KindeAuthProvider = ({
         if (refreshResult.success) {
           setIsAuthenticated(true);
         }
-      } catch (error) {
+      } catch (error: Error) {
         console.error("Failed to initialize storage:", error);
+        let errorDescription = "";
+
+        errorDescription = `Failed to initialize storage: ${error instanceof Error ? error.message : "Unknown error"}`;
+        callbacks?.onError?.(
+          {
+            error: "ERR_STORAGE",
+            errorDescription,
+          },
+          {},
+          contextValue,
+        );
       }
     };
-
     initializeStorage();
   }, []);
 
@@ -251,7 +261,19 @@ export const KindeAuthProvider = ({
         );
 
         setRefreshTimer(exchangeCodeResponse.expiresIn || 60, async () => {
-          refreshToken({ domain, clientId, onRefresh });
+          try {
+            await refreshToken({ domain, clientId, onRefresh });
+          } catch (error) {
+            callbacks?.onError?.(
+              {
+                error: "ERR_REFRESH",
+                errorDescription:
+                  error instanceof Error ? error.message : "Unknown error",
+              },
+              {},
+              contextValue,
+            );
+          }
         });
         const user = await getUserProfile();
         if (user) {
@@ -572,7 +594,7 @@ export const KindeAuthProvider = ({
         callbacks.onEvent(AuthEvent.tokenRefreshed, data, contextValue);
       }
     },
-    [callbacks],
+    [callbacks, contextValue],
   );
 
   if (!isStorageReady || !storage) {
