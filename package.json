@@ -9,34 +9,49 @@
   "files": [
     "dist"
   ],
-  "version": "0.3.0",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.mjs"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils.mjs",
+      "require": "./dist/utils.cjs",
+      "default": "./dist/utils.mjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "version": "0.3.1-44",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "prepare": "npm run build",
+    "prepare-utils": "mkdir -p utils",
     "preview": "vite preview",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "lint": "prettier --check .",
     "lint:fix": "prettier --write ."
   },
-  "module": "./dist/kinde-expo.cjs",
-  "main": "./dist/kinde-expo.cjs",
-  "types": "./dist/main.d.ts",
   "devDependencies": {
     "@types/base-64": "^1.0.2",
     "@types/node": "^20.12.7",
-    "@types/react": "^18.3.3",
+    "@types/react": "^18.2.79",
     "@vitest/coverage-v8": "^1.5.0",
     "expo-constants": "^16.0.2",
     "prettier": "^3.2.5",
-    "typescript": "^5.4.5",
-    "vite": "^5.2.8",
-    "vite-plugin-dts": "^3.8.1",
+    "typescript": "^5.8.3",
+    "vite": "^6.2.5",
+    "vite-plugin-dts": "^4.5.3",
     "vitest": "^1.5.0"
   },
   "dependencies": {
-    "@kinde/js-utils": "0.14.0",
+    "@kinde/js-utils": "0.16.0-3",
     "@kinde/jwt-decoder": "^0.2.0",
     "@kinde/jwt-validator": "^0.4.0",
     "@vitejs/plugin-react": "^4.3.1",
@@ -46,7 +61,7 @@
     "expo-crypto": "^13.0.2",
     "expo-linking": "^6.3.1",
     "expo-secure-store": "^13.0.2",
-    "expo-web-browser": "^14.0.2"
+    "expo-web-browser": "^13.0.3"
   },
   "peerDependencies": {
     "expo": "*",

@@ -1,4 +1,4 @@
-import type {
+import {
   LoginMethodParams,
   getClaim,
   getClaims,
@@ -7,6 +7,10 @@ import type {
   getFlag,
   getUserProfile,
   getUserOrganizations,
+  SessionManager,
+  UserProfile,
+  RefreshTokenResult,
+  RefreshType,
 } from "@kinde/js-utils";
 import {
   ExpoSecureStore,
@@ -27,7 +31,13 @@ import {
   TokenTypeHint,
 } from "expo-auth-session";
 import { openAuthSessionAsync } from "expo-web-browser";
-import { createContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useState,
+  useMemo,
+} from "react";
 import { DEFAULT_TOKEN_SCOPES } from "./constants";
 import {
   LoginResponse,
@@ -51,12 +61,49 @@ if (typeof global !== "undefined") {
   global.atob = decode;
 }
 
-const storage = new ExpoSecureStore();
-setActiveStorage(storage);
+export type ErrorProps = {
+  error: string;
+  errorDescription: string;
+};
+
+enum AuthEvent {
+  login = "login",
+  logout = "logout",
+  register = "register",
+  tokenRefreshed = "tokenRefreshed",
+}
+
+type EventTypes = {
+  (
+    event: AuthEvent.tokenRefreshed,
+    state: RefreshTokenResult,
+    context: KindeAuthHook,
+  ): void;
+  (
+    event: AuthEvent,
+    state: Record<string, unknown>,
+    context: KindeAuthHook,
+  ): void;
+};
+
+type KindeCallbacks = {
+  onSuccess?: (
+    user: UserProfile,
+    state: Record<string, unknown>,
+    context: KindeAuthHook,
+  ) => void;
+  onError?: (
+    props: ErrorProps,
+    state: Record<string, string>,
+    context: KindeAuthHook,
+  ) => void;
+  onEvent?: EventTypes;
+};
 
 export const KindeAuthProvider = ({
   children,
   config,
+  callbacks,
 }: {
   children: React.ReactNode;
   config: {
@@ -64,6 +111,7 @@ export const KindeAuthProvider = ({
     clientId: string | undefined;
     scopes?: string;
   };
+  callbacks?: KindeCallbacks;
 }) => {
   const domain = config.domain;
   if (domain === undefined)
@@ -78,6 +126,45 @@ export const KindeAuthProvider = ({
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const redirectUri = makeRedirectUri({ native: Constants.isDevice });
 
+  const [storage, setStorage] = useState<SessionManager>();
+  const [isStorageReady, setIsStorageReady] = useState(false);
+
+  useEffect(() => {
+    const initializeStorage = async () => {
+      try {
+        const ExpoStore = await ExpoSecureStore.default();
+        const storageInstance = new ExpoStore();
+        setActiveStorage(storageInstance);
+        setStorage(storageInstance);
+        setIsStorageReady(true);
+
+        // refresh token on load
+        const refreshResult = await refreshToken({
+          domain,
+          clientId,
+          onRefresh,
+        });
+        if (refreshResult.success) {
+          setIsAuthenticated(true);
+        }
+      } catch (error: unknown) {
+        console.error("Failed to initialize storage:", error);
+        let errorDescription = "";
+
+        errorDescription = `Failed to initialize storage: ${error instanceof Error ? error.message : "Unknown error"}`;
+        callbacks?.onError?.(
+          {
+            error: "ERR_STORAGE",
+            errorDescription,
+          },
+          {},
+          contextValue,
+        );
+      }
+    };
+    initializeStorage();
+  }, []);
+
   const discovery: DiscoveryDocument | null = {
     authorizationEndpoint: `${domain}/oauth2/auth`,
     tokenEndpoint: `${domain}/oauth2/token`,
@@ -85,16 +172,6 @@ export const KindeAuthProvider = ({
     userInfoEndpoint: `${domain}/oauth2/v2/user_profile`,
     revocationEndpoint: `${domain}/oauth2/revoke`,
   };
-
-  useEffect(() => {
-    const checkAuthentication = async () => {
-      const token = await getAccessToken();
-      if (token) {
-        setIsAuthenticated(true);
-      }
-    };
-    checkAuthentication();
-  }, []);
 
   const authenticate = async (
     options: Partial<LoginMethodParams> = {},
@@ -105,6 +182,14 @@ export const KindeAuthProvider = ({
         errorMessage: "This library only works on a mobile device",
       };
     }
+
+    if (!storage) {
+      return {
+        success: false,
+        errorMessage: "Storage is not ready",
+      };
+    }
+
     const request = new AuthRequest({
       clientId,
       redirectUri,
@@ -176,8 +261,24 @@ export const KindeAuthProvider = ({
         );
 
         setRefreshTimer(exchangeCodeResponse.expiresIn || 60, async () => {
-          refreshToken({ domain, clientId });
+          try {
+            await refreshToken({ domain, clientId, onRefresh });
+          } catch (error) {
+            callbacks?.onError?.(
+              {
+                error: "ERR_REFRESH",
+                errorDescription:
+                  error instanceof Error ? error.message : "Unknown error",
+              },
+              {},
+              contextValue,
+            );
+          }
         });
+        const user = await getUserProfile();
+        if (user) {
+          callbacks?.onSuccess?.(user, {}, contextValue);
+        }
 
         return {
           success: true,
@@ -185,12 +286,28 @@ export const KindeAuthProvider = ({
           idToken: exchangeCodeResponse.idToken!,
         };
       }
+      callbacks?.onError?.(
+        {
+          error: "ERR_CODE_EXCHANGE",
+          errorDescription: "Unknown Error",
+        },
+        {},
+        contextValue,
+      );
       return {
         success: false,
         errorMessage: "Unknown error",
       };
     } catch (err: any) {
       console.error(err);
+      callbacks?.onError?.(
+        {
+          error: "ERR_CODE_EXCHANGE",
+          errorDescription: err.message,
+        },
+        {},
+        contextValue,
+      );
       return { success: false, errorMessage: err.message };
     }
   };
@@ -203,7 +320,34 @@ export const KindeAuthProvider = ({
   const login = async (
     options: Partial<LoginMethodParams> = {},
   ): Promise<LoginResponse> => {
-    return authenticate({ ...options, prompt: PromptTypes.login });
+    const response = await authenticate({
+      ...options,
+      prompt: PromptTypes.login,
+    });
+    handleLoginResponse(response, AuthEvent.login);
+    return response;
+  };
+
+  const handleLoginResponse = async (
+    response: LoginResponse,
+    eventType: AuthEvent = AuthEvent.login,
+  ) => {
+    if (response.success) {
+      const user = await getUserProfile();
+      if (user) {
+        callbacks?.onEvent?.(eventType, response, contextValue);
+        callbacks?.onSuccess?.(user, {}, contextValue);
+      }
+    } else {
+      callbacks?.onError?.(
+        {
+          error: "ERR_LOGIN",
+          errorDescription: response.errorMessage,
+        },
+        {},
+        contextValue,
+      );
+    }
   };
 
   /**
@@ -214,7 +358,12 @@ export const KindeAuthProvider = ({
   const register = async (
     options: Partial<LoginMethodParams> = {},
   ): Promise<LoginResponse> => {
-    return authenticate({ ...options, prompt: PromptTypes.create });
+    const response = await authenticate({
+      ...options,
+      prompt: PromptTypes.create,
+    });
+    await handleLoginResponse(response, AuthEvent.register);
+    return response;
   };
 
   /**
@@ -225,9 +374,14 @@ export const KindeAuthProvider = ({
   async function logout({
     revokeToken,
   }: Partial<LogoutRequest> = {}): Promise<LogoutResult> {
+    if (!storage) {
+      return Promise.resolve({
+        success: false,
+      });
+    }
     const cleanup = async () => {
-      await storage.removeItems(StorageKeys.accessToken, StorageKeys.idToken)
-      
+      await storage.removeItems(StorageKeys.accessToken, StorageKeys.idToken);
+      callbacks?.onEvent?.(AuthEvent.logout, {}, contextValue);
       setIsAuthenticated(false);
     };
 
@@ -266,6 +420,9 @@ export const KindeAuthProvider = ({
    * @returns {Promise<string | null>}
    */
   async function getAccessToken(): Promise<string | null> {
+    if (!storage) {
+      return Promise.resolve(null);
+    }
     return (await storage.getSessionItem(StorageKeys.accessToken)) as string;
   }
 
@@ -274,6 +431,9 @@ export const KindeAuthProvider = ({
    * @returns {Promise<string | null>}
    */
   async function getIdToken(): Promise<string | null> {
+    if (!storage) {
+      return Promise.resolve(null);
+    }
     return (await storage.getSessionItem(StorageKeys.idToken)) as string;
   }
 
@@ -339,90 +499,110 @@ export const KindeAuthProvider = ({
     };
   }
 
-  const value: KindeAuthHook = {
-    login,
-    logout,
-    register,
+  const contextValue = useMemo((): KindeAuthHook => {
+    return {
+      login,
+      logout,
+      register,
 
-    getAccessToken,
-    getIdToken,
-    getDecodedToken,
+      getAccessToken,
+      getIdToken,
+      getDecodedToken,
 
-    /**
-     *
-     * @param keyName key to get from the token
-     * @returns { Promise<string | number | string[] | null> }
-     */
-    getClaim: async <T = JWTDecoded,>(
-      ...args: Parameters<typeof getClaim<T>>
-    ) => {
-      const { getClaim } = await import("@kinde/js-utils");
-      return getClaim(...args);
-    },
-    // /**
-    //  * get all claims from the token
-    //  * @returns { Promise<T | null> }
-    //  */
-    getClaims: async <T = JWTDecoded,>(
-      ...args: Parameters<typeof getClaims<T>>
-    ) => {
-      const { getClaims } = await import("@kinde/js-utils");
-      return getClaims(...args);
-    },
+      /**
+       *
+       * @param keyName key to get from the token
+       * @returns { Promise<string | number | string[] | null> }
+       */
+      getClaim: async <T = JWTDecoded,>(
+        ...args: Parameters<typeof getClaim<T>>
+      ) => {
+        const { getClaim } = await import("@kinde/js-utils");
+        return getClaim(...args);
+      },
+      // /**
+      //  * get all claims from the token
+      //  * @returns { Promise<T | null> }
+      //  */
+      getClaims: async <T = JWTDecoded,>(
+        ...args: Parameters<typeof getClaims<T>>
+      ) => {
+        const { getClaims } = await import("@kinde/js-utils");
+        return getClaims(...args);
+      },
 
-    getCurrentOrganization: async (
-      ...args: Parameters<typeof getCurrentOrganization>
-    ) => {
-      const { getCurrentOrganization } = await import("@kinde/js-utils");
-      return getCurrentOrganization(...args);
-    },
-    getFlag: async (...args: Parameters<typeof getFlag>) => {
-      const { getFlag } = await import("@kinde/js-utils");
-      return getFlag(...args);
-    },
-    getUserProfile: async (...args: Parameters<typeof getUserProfile>) => {
-      const { getUserProfile } = await import("@kinde/js-utils");
-      return getUserProfile(...args);
-    },
+      getCurrentOrganization: async (
+        ...args: Parameters<typeof getCurrentOrganization>
+      ) => {
+        const { getCurrentOrganization } = await import("@kinde/js-utils");
+        return getCurrentOrganization(...args);
+      },
+      getFlag: async (...args: Parameters<typeof getFlag>) => {
+        const { getFlag } = await import("@kinde/js-utils");
+        return getFlag(...args);
+      },
+      getUserProfile: async (...args: Parameters<typeof getUserProfile>) => {
+        const { getUserProfile } = await import("@kinde/js-utils");
+        return getUserProfile(...args);
+      },
 
-    /**
-     *
-     * @param permissionKey gets the value of a permission
-     * @returns { PermissionAccess }
-     */
-    getPermission: async (...args: Parameters<typeof getPermission>) => {
-      const { getPermission } = await import("@kinde/js-utils");
-      return getPermission(...args);
-    },
+      /**
+       *
+       * @param permissionKey gets the value of a permission
+       * @returns { PermissionAccess }
+       */
+      getPermission: async (...args: Parameters<typeof getPermission>) => {
+        const { getPermission } = await import("@kinde/js-utils");
+        return getPermission(...args);
+      },
 
-    /**
-     * Get all permissions
-     * @returns { Promise<Permissions> }
-     */
-    getPermissions: async (...args: Parameters<typeof getPermissions>) => {
-      const { getPermissions } = await import("@kinde/js-utils");
-      return getPermissions(...args);
-    },
-    getUserOrganizations: async (
-      ...args: Parameters<typeof getUserOrganizations>
-    ) => {
-      const { getUserOrganizations } = await import("@kinde/js-utils");
-      return getUserOrganizations(...args);
-    },
-    getRoles: async (...args: Parameters<typeof getRoles>) => {
-      const { getRoles } = await import("@kinde/js-utils");
-      return getRoles(...args);
-    },
-    // refreshToken: async (...args: Parameters<typeof refreshToken>) => {
-    //   const { refreshToken } = await import("@kinde/js-utils");
-    //   return refreshToken(...args);
-    // },
+      /**
+       * Get all permissions
+       * @returns { Promise<Permissions> }
+       */
+      getPermissions: async (...args: Parameters<typeof getPermissions>) => {
+        const { getPermissions } = await import("@kinde/js-utils");
+        return getPermissions(...args);
+      },
+      getUserOrganizations: async (
+        ...args: Parameters<typeof getUserOrganizations>
+      ) => {
+        const { getUserOrganizations } = await import("@kinde/js-utils");
+        return getUserOrganizations(...args);
+      },
+      getRoles: async (...args: Parameters<typeof getRoles>) => {
+        const { getRoles } = await import("@kinde/js-utils");
+        return getRoles(...args);
+      },
+      refreshToken: async (args: {
+        domain: string;
+        clientId: string;
+        refreshType?: RefreshType;
+        onRefresh?: (data: RefreshTokenResult) => void;
+      }) => {
+        const { refreshToken } = await import("@kinde/js-utils");
+        return refreshToken(args);
+      },
 
-    isAuthenticated,
-  };
+      isAuthenticated,
+    };
+  }, [login, logout, register, isStorageReady, storage, isAuthenticated]);
+
+  const onRefresh = useCallback(
+    (data: RefreshTokenResult): void => {
+      if (callbacks?.onEvent) {
+        callbacks.onEvent(AuthEvent.tokenRefreshed, data, contextValue);
+      }
+    },
+    [callbacks, contextValue],
+  );
+
+  if (!isStorageReady || !storage) {
+    return null;
+  }
 
   return (
-    <KindeAuthContext.Provider value={value}>
+    <KindeAuthContext.Provider value={contextValue}>
       {children}
     </KindeAuthContext.Provider>
   );
