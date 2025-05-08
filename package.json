@@ -35,14 +35,18 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
-    "lint": "prettier --check .",
-    "lint:fix": "prettier --write ."
+    "lint": "prettier --check . && eslint --ext .js,.jsx,.ts,.tsx .",
+    "lint:fix": "prettier --write . && eslint --ext .js,.jsx,.ts,.tsx . --fix"
   },
   "devDependencies": {
     "@types/base-64": "^1.0.2",
     "@types/node": "^20.12.7",
     "@types/react": "^18.2.79",
+    "@typescript-eslint/eslint-plugin": "^8.32.0",
+    "@typescript-eslint/parser": "^8.32.0",
     "@vitest/coverage-v8": "^1.5.0",
+    "eslint": "^9.26.0",
+    "eslint-plugin-react": "^7.37.5",
     "expo-constants": "^16.0.2",
     "prettier": "^3.2.5",
     "typescript": "^5.8.3",
