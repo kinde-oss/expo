@@ -147,7 +147,7 @@ export const KindeAuthProvider = ({
         if (refreshResult.success) {
           setIsAuthenticated(true);
         }
-      } catch (error: Error) {
+      } catch (error: unknown) {
         console.error("Failed to initialize storage:", error);
         let errorDescription = "";
 
