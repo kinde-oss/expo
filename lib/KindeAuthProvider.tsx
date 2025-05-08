@@ -298,17 +298,20 @@ export const KindeAuthProvider = ({
         success: false,
         errorMessage: "Unknown error",
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
+      const errorDescription =
+        err instanceof Error ? err.message : "Unknown error";
+
       callbacks?.onError?.(
         {
           error: "ERR_CODE_EXCHANGE",
-          errorDescription: err.message,
+          errorDescription,
         },
         {},
         contextValue,
       );
-      return { success: false, errorMessage: err.message };
+      return { success: false, errorMessage: errorDescription };
     }
   };
 
