@@ -381,7 +381,11 @@ export const KindeAuthProvider = ({
       });
     }
     const cleanup = async () => {
-      await storage.removeItems(StorageKeys.accessToken, StorageKeys.idToken);
+      await storage.removeItems(
+        StorageKeys.accessToken,
+        StorageKeys.idToken,
+        StorageKeys.refreshToken,
+      );
       callbacks?.onEvent?.(AuthEvent.logout, {}, contextValue);
       setIsAuthenticated(false);
     };
