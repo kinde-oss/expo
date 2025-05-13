@@ -50,6 +50,7 @@ export interface KindeAuthHook {
     onRefresh?: (data: RefreshTokenResult) => void;
   }) => Promise<RefreshTokenResult>;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 export const useKindeAuthContext = (): KindeAuthHook => {

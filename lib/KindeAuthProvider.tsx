@@ -124,6 +124,7 @@ export const KindeAuthProvider = ({
   const scopes = config.scopes?.split(" ") || DEFAULT_TOKEN_SCOPES.split(" ");
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const redirectUri = makeRedirectUri({ native: Constants.isDevice });
 
   const [storage, setStorage] = useState<SessionManager>();
@@ -158,6 +159,8 @@ export const KindeAuthProvider = ({
           {},
           contextValue,
         );
+      } finally {
+        setIsLoading(false);
       }
     };
     initializeStorage();
