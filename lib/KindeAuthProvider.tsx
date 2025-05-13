@@ -593,8 +593,17 @@ export const KindeAuthProvider = ({
       },
 
       isAuthenticated,
+      isLoading,
     };
-  }, [login, logout, register, isStorageReady, storage, isAuthenticated]);
+  }, [
+    login,
+    logout,
+    register,
+    isStorageReady,
+    storage,
+    isAuthenticated,
+    isLoading,
+  ]);
 
   const onRefresh = useCallback(
     (data: RefreshTokenResult) => {
