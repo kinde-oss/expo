@@ -31,6 +31,7 @@ export default defineConfig({
         "expo-secure-store",
         "expo-web-browser",
         "@kinde/jwt-validator",
+        "@kinde/js-utils",
       ],
       output: {
         globals: {
