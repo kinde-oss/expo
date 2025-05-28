@@ -50,6 +50,8 @@ import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 import Constants from "expo-constants";
 import { decode, encode } from "base-64";
+import type { OrgCode } from "./types";
+
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
 );
@@ -507,6 +509,69 @@ export const KindeAuthProvider = ({
     };
   }
 
+  /**
+   * Generates a URL to the user profile portal
+   * @param {Object} options - Configuration options
+   * @param {OrgCode} options.orgCode - Organization code (must start with "org_")
+   * @param {string} options.returnUrl - URL to redirect to after completing the profile flow
+   * @param {string} options.subNav - Sub-navigation section to display
+   * @returns {Promise<{url: URL}>} Object containing the URL to redirect to
+   */
+  async function generateProfileUrl({
+    orgCode,
+    returnUrl,
+    subNav,
+  }: {
+    orgCode: OrgCode;
+    returnUrl: string;
+    subNav: string;
+  }): Promise<{ url: URL }> {
+    if (!domain) {
+      throw new Error("generateProfileUrl: Domain is not configured");
+    }
+
+    if (!storage) {
+      throw new Error("generateProfileUrl: Storage is not ready");
+    }
+
+    const token = await getAccessToken();
+    if (!token) {
+      throw new Error("generateProfileUrl: Access Token not found");
+    }
+
+    // Sanitize domain (remove trailing slash)
+    const sanitizedDomain = domain.replace(/\/$/, '');
+
+    const fetchResponse = await fetch(
+      `${sanitizedDomain}/account_api/v1/portal_link?return_url=${encodeURIComponent(returnUrl)}&org_code=${encodeURIComponent(orgCode)}&sub_nav=${encodeURIComponent(subNav)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    if (!fetchResponse.ok) {
+      throw new Error(
+        `Failed to fetch profile URL: ${fetchResponse.status} ${fetchResponse.statusText}`,
+      );
+    }
+
+    const fetchResult = await fetchResponse.json();
+    if (!fetchResult.url || typeof fetchResult.url !== "string") {
+      throw new Error("Invalid URL received from API");
+    }
+    
+    try {
+      return {
+        url: new URL(fetchResult.url),
+      };
+    } catch (error) {
+      console.error(error);
+      throw new Error(`Invalid URL format received from API: ${fetchResult.url}`);
+    }
+  }
+
   const contextValue = useMemo((): KindeAuthHook => {
     return {
       login,
@@ -516,6 +581,7 @@ export const KindeAuthProvider = ({
       getAccessToken,
       getIdToken,
       getDecodedToken,
+      generateProfileUrl,
 
       /**
        *
@@ -599,6 +665,7 @@ export const KindeAuthProvider = ({
     login,
     logout,
     register,
+    generateProfileUrl,
     isStorageReady,
     storage,
     isAuthenticated,

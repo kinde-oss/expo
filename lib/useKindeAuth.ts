@@ -15,6 +15,7 @@ import {
 } from "@kinde/js-utils";
 import { KindeAuthContext } from "./KindeAuthProvider";
 import { JWTDecoded } from "@kinde/jwt-decoder";
+import type { OrgCode } from "./types";
 
 export interface KindeAuthHook {
   login: (options?: Partial<LoginMethodParams>) => Promise<LoginResponse>;
@@ -49,6 +50,11 @@ export interface KindeAuthHook {
     refreshType?: RefreshType;
     onRefresh?: (data: RefreshTokenResult) => void;
   }) => Promise<RefreshTokenResult>;
+  generateProfileUrl: (options: {
+    orgCode: OrgCode;
+    returnUrl: string;
+    subNav: string;
+  }) => Promise<{ url: URL }>;
   isAuthenticated: boolean;
   isLoading: boolean;
 }

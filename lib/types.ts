@@ -26,6 +26,8 @@ export type Permissions = { orgCode: string | null; permissions: string[] };
 
 export type LoginResponse = LoginSuccessResponse | LoginFailureResponse;
 
+export type OrgCode = `org_${string}`;
+
 export type UserProfile = {
   id: string;
   givenName: string;
