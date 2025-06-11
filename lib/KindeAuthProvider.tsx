@@ -354,7 +354,8 @@ export const KindeAuthProvider = ({
       callbacks?.onError?.(
         {
           error: "ERR_PORTAL",
-          errorDescription: error instanceof Error ? error.message : "Unknown error",
+          errorDescription:
+            error instanceof Error ? error.message : "Unknown error",
         },
         {},
         contextValue,
