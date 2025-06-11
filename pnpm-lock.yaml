@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@kinde/js-utils':
-        specifier: 0.16.0-3
-        version: 0.16.0-3(expo-secure-store@13.0.2(expo@53.0.8(@babel/core@7.27.1)(react-native@0.79.2(@babel/core@7.27.1)(@types/react@18.3.21)(react@19.1.0))(react@19.1.0)))
+        specifier: 0.18.3
+        version: 0.18.3(expo-secure-store@13.0.2(expo@53.0.8(@babel/core@7.27.1)(react-native@0.79.2(@babel/core@7.27.1)(@types/react@18.3.21)(react@19.1.0))(react@19.1.0)))
       '@kinde/jwt-decoder':
         specifier: ^0.2.0
         version: 0.2.0
@@ -1096,8 +1096,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
 
-  '@kinde/js-utils@0.16.0-3':
-    resolution: {integrity: sha512-p97fNjkVw9EBtiAWl1028NM8Ob3j1kxU/qDh6WvH69+9g0CaXm46/ANhZXmsvRQsZ0zxuCqLR6PwcDFaxfxmKg==}
+  '@kinde/js-utils@0.18.3':
+    resolution: {integrity: sha512-U4j4DvwKYlzOUxkl8yBUfa8WeQh6m6koKuYZyURUBPd0V+vkFsRId2SEJkbwuXL7U/ftX7jo63wXZHNvVYpuWw==}
     peerDependencies:
       expo-secure-store: '>=11.0.0'
     peerDependenciesMeta:
@@ -5632,7 +5632,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@kinde/js-utils@0.16.0-3(expo-secure-store@13.0.2(expo@53.0.8(@babel/core@7.27.1)(react-native@0.79.2(@babel/core@7.27.1)(@types/react@18.3.21)(react@19.1.0))(react@19.1.0)))':
+  '@kinde/js-utils@0.18.3(expo-secure-store@13.0.2(expo@53.0.8(@babel/core@7.27.1)(react-native@0.79.2(@babel/core@7.27.1)(@types/react@18.3.21)(react@19.1.0))(react@19.1.0)))':
     dependencies:
       '@kinde/jwt-decoder': 0.2.0
     optionalDependencies:

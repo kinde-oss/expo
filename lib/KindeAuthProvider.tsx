@@ -11,6 +11,8 @@ import {
   UserProfile,
   RefreshTokenResult,
   RefreshType,
+  generatePortalUrl,
+  PortalPage,
 } from "@kinde/js-utils";
 import {
   ExpoSecureStore,
@@ -30,7 +32,7 @@ import {
   revokeAsync,
   TokenTypeHint,
 } from "expo-auth-session";
-import { openAuthSessionAsync } from "expo-web-browser";
+import { openAuthSessionAsync, openBrowserAsync } from "expo-web-browser";
 import {
   createContext,
   useEffect,
@@ -332,6 +334,34 @@ export const KindeAuthProvider = ({
     return response;
   };
 
+  /**
+   * Login method
+   * @param {Partial<LoginMethodParams>} subNav
+   * @returns {void}
+   */
+  const portal = async (
+    subNav: PortalPage = PortalPage.profile,
+  ): Promise<void> => {
+    try {
+      const { url } = await generatePortalUrl({
+        domain,
+        subNav,
+        returnUrl: redirectUri,
+      });
+      await openBrowserAsync(url.toString());
+    } catch (error) {
+      console.error("Failed to open Kinde portal", error);
+      callbacks?.onError?.(
+        {
+          error: "ERR_PORTAL",
+          errorDescription: error instanceof Error ? error.message : "Unknown error",
+        },
+        {},
+        contextValue,
+      );
+    }
+  };
+
   const handleLoginResponse = async (
     response: LoginResponse,
     eventType: AuthEvent = AuthEvent.login,
@@ -512,6 +542,7 @@ export const KindeAuthProvider = ({
       login,
       logout,
       register,
+      portal,
 
       getAccessToken,
       getIdToken,
@@ -599,6 +630,7 @@ export const KindeAuthProvider = ({
     login,
     logout,
     register,
+    portal,
     isStorageReady,
     storage,
     isAuthenticated,
