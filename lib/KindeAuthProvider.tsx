@@ -13,12 +13,16 @@ import {
   RefreshType,
   generatePortalUrl,
   PortalPage,
+  LocalStorage,
+  MemoryStorage,
+  storageSettings,
 } from "@kinde/js-utils";
 import {
   ExpoSecureStore,
   mapLoginMethodParamsForUrl,
   PromptTypes,
   setActiveStorage,
+  setInsecureStorage,
   StorageKeys,
   setRefreshTimer,
   refreshToken,
@@ -112,6 +116,7 @@ export const KindeAuthProvider = ({
     domain: string | undefined;
     clientId: string | undefined;
     scopes?: string;
+    storageType?: "expo" | "local";
   };
   callbacks?: KindeCallbacks;
 }) => {
@@ -131,13 +136,39 @@ export const KindeAuthProvider = ({
 
   const [storage, setStorage] = useState<SessionManager>();
   const [isStorageReady, setIsStorageReady] = useState(false);
-
   useEffect(() => {
     const initializeStorage = async () => {
       try {
-        const ExpoStore = await ExpoSecureStore.default();
-        const storageInstance = new ExpoStore();
-        setActiveStorage(storageInstance);
+        let type = config.storageType;
+        if (!type) {
+          // Default: use ExpoSecureStore on native, LocalStorage on web
+          type =
+            Constants?.appOwnership === "expo" ||
+            Constants?.appOwnership === "standalone"
+              ? "expo"
+              : "local";
+        }
+
+        let storageInstance: SessionManager;
+
+        if (type === "expo") {
+          const ExpoStore = await ExpoSecureStore.default();
+          storageInstance = new ExpoStore();
+          setActiveStorage(storageInstance);
+        } else if (type === "local") {
+          // For web: use MemoryStorage for sensitive data, LocalStorage for refresh tokens
+          const memoryStorage = new MemoryStorage();
+          const localStorage = new LocalStorage();
+
+          setActiveStorage(memoryStorage);
+          setInsecureStorage(localStorage);
+          storageSettings.useInsecureForRefreshToken = true;
+
+          storageInstance = memoryStorage;
+        } else {
+          throw new Error(`Unsupported storage type: ${type}`);
+        }
+
         setStorage(storageInstance);
         setIsStorageReady(true);
 
@@ -152,7 +183,6 @@ export const KindeAuthProvider = ({
         }
       } catch (error: unknown) {
         console.error("Failed to initialize storage:", error);
-
         callbacks?.onError?.(
           {
             error: "ERR_STORAGE",
