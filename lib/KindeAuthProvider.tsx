@@ -229,8 +229,8 @@ export const KindeAuthProvider = ({
         );
 
         const enhancedSecurity = config.enhancedSecurity || false;
-        if (enhancedSecurity) {
-          if (exchangeCodeResponse.idToken) {
+        if (exchangeCodeResponse.idToken) {
+          if (enhancedSecurity) {
             const idTokenValidationResult = await validateToken({
               token: exchangeCodeResponse.idToken,
               domain: domain,
@@ -243,15 +243,17 @@ export const KindeAuthProvider = ({
               );
             } else {
               console.error(`Invalid id token`, idTokenValidationResult.message);
+              // Consider throwing an error or returning failure response
             }
+          } else {
+            // Still store the token but with a warning about reduced security
+            storage.setSessionItem(
+              StorageKeys.idToken,
+              exchangeCodeResponse.idToken,
+            );
           }
-        } else {
-          storage.setSessionItem(
-            StorageKeys.idToken,
-            exchangeCodeResponse.idToken,
-          );
-        }        
-
+        }
+        
         const accessTokenValidationResult = await validateToken({
           token: exchangeCodeResponse.accessToken,
           domain: domain,
