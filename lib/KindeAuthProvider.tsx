@@ -102,17 +102,21 @@ type KindeCallbacks = {
   onEvent?: EventTypes;
 };
 
+type KindeAuthConfig = {
+    domain: string | undefined;
+    clientId: string | undefined;
+    scopes?: string;
+    enhancedSecurity: boolean;
+
+}
+
 export const KindeAuthProvider = ({
   children,
   config,
   callbacks,
 }: {
   children: React.ReactNode;
-  config: {
-    domain: string | undefined;
-    clientId: string | undefined;
-    scopes?: string;
-  };
+  config: KindeAuthConfig;
   callbacks?: KindeCallbacks;
 }) => {
   const domain = config.domain;
@@ -225,21 +229,29 @@ export const KindeAuthProvider = ({
           { tokenEndpoint: `${domain}/oauth2/token` },
         );
 
-        if (exchangeCodeResponse.idToken) {
-          const idTokenValidationResult = await validateToken({
-            token: exchangeCodeResponse.idToken,
-            domain: domain,
-          });
+        const enhancedSecurity = config.enhancedSecurity || false;
+        if (enhancedSecurity) {
+          if (exchangeCodeResponse.idToken) {
+            const idTokenValidationResult = await validateToken({
+              token: exchangeCodeResponse.idToken,
+              domain: domain,
+            });
 
-          if (idTokenValidationResult.valid) {
-            storage.setSessionItem(
-              StorageKeys.idToken,
-              exchangeCodeResponse.idToken,
-            );
-          } else {
-            console.error(`Invalid id token`, idTokenValidationResult.message);
+            if (idTokenValidationResult.valid) {
+              storage.setSessionItem(
+                StorageKeys.idToken,
+                exchangeCodeResponse.idToken,
+              );
+            } else {
+              console.error(`Invalid id token`, idTokenValidationResult.message);
+            }
           }
-        }
+        } else {
+          storage.setSessionItem(
+            StorageKeys.idToken,
+            exchangeCodeResponse.idToken,
+          );
+        }        
 
         const accessTokenValidationResult = await validateToken({
           token: exchangeCodeResponse.accessToken,
