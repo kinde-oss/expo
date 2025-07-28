@@ -106,8 +106,7 @@ type KindeAuthConfig = {
     domain: string | undefined;
     clientId: string | undefined;
     scopes?: string;
-    enhancedSecurity: boolean;
-
+    enhancedSecurity?: boolean;
 }
 
 export const KindeAuthProvider = ({
