@@ -103,11 +103,11 @@ type KindeCallbacks = {
 };
 
 type KindeAuthConfig = {
-    domain: string | undefined;
-    clientId: string | undefined;
-    scopes?: string;
-    enhancedSecurity?: boolean;
-}
+  domain: string | undefined;
+  clientId: string | undefined;
+  scopes?: string;
+  enhancedSecurity?: boolean;
+};
 
 export const KindeAuthProvider = ({
   children,
@@ -242,33 +242,44 @@ export const KindeAuthProvider = ({
                 exchangeCodeResponse.idToken,
               );
             } else {
-              console.error(`Invalid id token`, idTokenValidationResult.message);
-              // Consider throwing an error or returning failure response
+              console.error(
+                `Invalid id token`,
+                idTokenValidationResult.message,
+              );
             }
           } else {
-            // Still store the token but with a warning about reduced security
             storage.setSessionItem(
               StorageKeys.idToken,
               exchangeCodeResponse.idToken,
             );
           }
         }
-        
-        const accessTokenValidationResult = await validateToken({
-          token: exchangeCodeResponse.accessToken,
-          domain: domain,
-        });
-        if (accessTokenValidationResult.valid) {
-          storage.setSessionItem(
-            StorageKeys.accessToken,
-            exchangeCodeResponse.accessToken,
-          );
-          setIsAuthenticated(true);
-        } else {
-          console.error(
-            `Invalid access token`,
-            accessTokenValidationResult.message,
-          );
+
+       
+        if (exchangeCodeResponse.accessToken) {
+          if (enhancedSecurity) {
+            const accessTokenValidationResult = await validateToken({
+              token: exchangeCodeResponse.accessToken,
+              domain: domain,
+            });
+            if (accessTokenValidationResult.valid) {
+              storage.setSessionItem(
+                StorageKeys.accessToken,
+                exchangeCodeResponse.accessToken,
+              );
+              setIsAuthenticated(true);
+            } else {
+              console.error(
+                `Invalid access token`,
+                accessTokenValidationResult.message,
+              );
+            }
+          } else {
+            storage.setSessionItem(
+              StorageKeys.accessToken,
+              exchangeCodeResponse.accessToken,
+            );
+          }
         }
 
         storage.setSessionItem(
