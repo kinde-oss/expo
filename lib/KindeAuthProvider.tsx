@@ -237,7 +237,7 @@ export const KindeAuthProvider = ({
             });
 
             if (idTokenValidationResult.valid) {
-              storage.setSessionItem(
+              await storage.setSessionItem(
                 StorageKeys.idToken,
                 exchangeCodeResponse.idToken,
               );
@@ -248,14 +248,13 @@ export const KindeAuthProvider = ({
               );
             }
           } else {
-            storage.setSessionItem(
+            await storage.setSessionItem(
               StorageKeys.idToken,
               exchangeCodeResponse.idToken,
             );
           }
         }
 
-       
         if (exchangeCodeResponse.accessToken) {
           if (enhancedSecurity) {
             const accessTokenValidationResult = await validateToken({
@@ -263,7 +262,7 @@ export const KindeAuthProvider = ({
               domain: domain,
             });
             if (accessTokenValidationResult.valid) {
-              storage.setSessionItem(
+              await storage.setSessionItem(
                 StorageKeys.accessToken,
                 exchangeCodeResponse.accessToken,
               );
@@ -275,14 +274,15 @@ export const KindeAuthProvider = ({
               );
             }
           } else {
-            storage.setSessionItem(
+            await storage.setSessionItem(
               StorageKeys.accessToken,
               exchangeCodeResponse.accessToken,
             );
+            setIsAuthenticated(true);
           }
         }
 
-        storage.setSessionItem(
+        await storage.setSessionItem(
           StorageKeys.refreshToken,
           exchangeCodeResponse.refreshToken,
         );
