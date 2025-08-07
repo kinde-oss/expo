@@ -102,17 +102,20 @@ type KindeCallbacks = {
   onEvent?: EventTypes;
 };
 
+type KindeAuthConfig = {
+  domain: string | undefined;
+  clientId: string | undefined;
+  scopes?: string;
+  enhancedSecurity?: boolean;
+};
+
 export const KindeAuthProvider = ({
   children,
   config,
   callbacks,
 }: {
   children: React.ReactNode;
-  config: {
-    domain: string | undefined;
-    clientId: string | undefined;
-    scopes?: string;
-  };
+  config: KindeAuthConfig;
   callbacks?: KindeCallbacks;
 }) => {
   const domain = config.domain;
@@ -225,40 +228,61 @@ export const KindeAuthProvider = ({
           { tokenEndpoint: `${domain}/oauth2/token` },
         );
 
+        const enhancedSecurity = config.enhancedSecurity || false;
         if (exchangeCodeResponse.idToken) {
-          const idTokenValidationResult = await validateToken({
-            token: exchangeCodeResponse.idToken,
-            domain: domain,
-          });
+          if (enhancedSecurity) {
+            const idTokenValidationResult = await validateToken({
+              token: exchangeCodeResponse.idToken,
+              domain: domain,
+            });
 
-          if (idTokenValidationResult.valid) {
-            storage.setSessionItem(
+            if (idTokenValidationResult.valid) {
+              await storage.setSessionItem(
+                StorageKeys.idToken,
+                exchangeCodeResponse.idToken,
+              );
+            } else {
+              console.error(
+                `Invalid id token`,
+                idTokenValidationResult.message,
+              );
+            }
+          } else {
+            await storage.setSessionItem(
               StorageKeys.idToken,
               exchangeCodeResponse.idToken,
             );
-          } else {
-            console.error(`Invalid id token`, idTokenValidationResult.message);
           }
         }
 
-        const accessTokenValidationResult = await validateToken({
-          token: exchangeCodeResponse.accessToken,
-          domain: domain,
-        });
-        if (accessTokenValidationResult.valid) {
-          storage.setSessionItem(
-            StorageKeys.accessToken,
-            exchangeCodeResponse.accessToken,
-          );
-          setIsAuthenticated(true);
-        } else {
-          console.error(
-            `Invalid access token`,
-            accessTokenValidationResult.message,
-          );
+        if (exchangeCodeResponse.accessToken) {
+          if (enhancedSecurity) {
+            const accessTokenValidationResult = await validateToken({
+              token: exchangeCodeResponse.accessToken,
+              domain: domain,
+            });
+            if (accessTokenValidationResult.valid) {
+              await storage.setSessionItem(
+                StorageKeys.accessToken,
+                exchangeCodeResponse.accessToken,
+              );
+              setIsAuthenticated(true);
+            } else {
+              console.error(
+                `Invalid access token`,
+                accessTokenValidationResult.message,
+              );
+            }
+          } else {
+            await storage.setSessionItem(
+              StorageKeys.accessToken,
+              exchangeCodeResponse.accessToken,
+            );
+            setIsAuthenticated(true);
+          }
         }
 
-        storage.setSessionItem(
+        await storage.setSessionItem(
           StorageKeys.refreshToken,
           exchangeCodeResponse.refreshToken,
         );
