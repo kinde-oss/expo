@@ -182,7 +182,8 @@ export const KindeAuthProvider = ({
   const authenticate = async (
     options: Partial<LoginMethodParams> = {},
   ): Promise<LoginResponse> => {
-    if (!redirectUri) {
+    const authRedirectUri = options.redirectURL || redirectUri;
+    if (!authRedirectUri) {
       return {
         success: false,
         errorMessage: "This library only works on a mobile device",
@@ -198,7 +199,7 @@ export const KindeAuthProvider = ({
 
     const request = new AuthRequest({
       clientId,
-      redirectUri,
+      redirectUri: authRedirectUri,
       scopes: scopes,
       extraParams: {
         ...mapLoginMethodParamsForUrl(options),
@@ -223,7 +224,7 @@ export const KindeAuthProvider = ({
             extraParams: request.codeVerifier
               ? { code_verifier: request.codeVerifier }
               : undefined,
-            redirectUri,
+            redirectUri: authRedirectUri,
           },
           { tokenEndpoint: `${domain}/oauth2/token` },
         );
