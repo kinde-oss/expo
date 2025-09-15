@@ -2,6 +2,8 @@
 
 The Kinde Expo SDK allows developers to quickly and securely integrate a new or an existing Expo application into the Kinde platform.
 
+You can also use the [Expo starter kit](https://github.com/kinde-starter-kits/expo-starter-kit) to get started.
+
 ## **Installation**
 
 ```bash
