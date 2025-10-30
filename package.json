@@ -41,7 +41,7 @@
   "devDependencies": {
     "@types/base-64": "^1.0.2",
     "@types/node": "^22.0.0",
-    "@types/react": "^18.2.79",
+    "@types/react": "19.2.2",
     "@typescript-eslint/eslint-plugin": "^8.32.0",
     "@typescript-eslint/parser": "^8.32.0",
     "@vitest/coverage-v8": "^1.5.0",
@@ -58,6 +58,7 @@
     "@kinde/js-utils": "0.18.3",
     "@kinde/jwt-decoder": "^0.2.0",
     "@kinde/jwt-validator": "^0.4.0",
+    "@types/react-dom": "19.2.2",
     "@vitejs/plugin-react": "^4.3.1",
     "base-64": "^1.0.0",
     "dotenv": "^16.4.5",
