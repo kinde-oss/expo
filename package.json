@@ -47,7 +47,7 @@
     "@vitest/coverage-v8": "^1.5.0",
     "eslint": "^9.26.0",
     "eslint-plugin-react": "^7.37.5",
-    "expo-constants": "^16.0.2",
+    "expo-constants": "^18.0.10",
     "prettier": "^3.2.5",
     "typescript": "^5.8.3",
     "vite": "^6.2.5",
@@ -62,11 +62,11 @@
     "@vitejs/plugin-react": "^4.3.1",
     "base-64": "^1.0.0",
     "dotenv": "^16.4.5",
-    "expo-auth-session": "^5.5.2",
-    "expo-crypto": "^13.0.2",
-    "expo-linking": "^6.3.1",
-    "expo-secure-store": "^13.0.2",
-    "expo-web-browser": "^13.0.3"
+    "expo-auth-session": "^7.0.8",
+    "expo-crypto": "^15.0.7",
+    "expo-linking": "^8.0.8",
+    "expo-secure-store": "^15.0.7",
+    "expo-web-browser": "^15.0.8"
   },
   "peerDependencies": {
     "expo": "*",
