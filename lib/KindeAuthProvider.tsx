@@ -150,17 +150,15 @@ export const KindeAuthProvider = ({
     const getStorageInstance = async (): Promise<SessionManager> => {
       if (Platform.OS === "web") {
         if (typeof window !== "undefined") {
-          if (typeof window !== "undefined") {
-            try {
-              // Test localStorage access (can throw in private browsing)
-              window.localStorage.setItem("__kinde_test__", "test");
-              window.localStorage.removeItem("__kinde_test__");
-              return new LocalStorage();
-            } catch (e) {
-              console.warn(
-                "[Kinde] localStorage unavailable (private browsing or restricted cookies); falling back to in-memory storage."
-              );
-            }
+          try {
+            // Test localStorage access (can throw in private browsing)
+            window.localStorage.setItem("__kinde_test__", "test");
+            window.localStorage.removeItem("__kinde_test__");
+            return new LocalStorage();
+          } catch (e) {
+            console.warn(
+              "[Kinde] localStorage unavailable (private browsing or restricted cookies); falling back to in-memory storage."
+            );
           }
         }
 
