@@ -16,6 +16,8 @@ import {
 } from "@kinde/js-utils";
 import {
   ExpoSecureStore,
+  LocalStorage,
+  MemoryStorage,
   mapLoginMethodParamsForUrl,
   PromptTypes,
   setActiveStorage,
@@ -32,7 +34,11 @@ import {
   revokeAsync,
   TokenTypeHint,
 } from "expo-auth-session";
-import { openAuthSessionAsync, openBrowserAsync } from "expo-web-browser";
+import {
+  openAuthSessionAsync,
+  openBrowserAsync,
+  maybeCompleteAuthSession,
+} from "expo-web-browser";
 import {
   createContext,
   useEffect,
@@ -52,6 +58,7 @@ import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 import Constants from "expo-constants";
 import { decode, encode } from "base-64";
+import { Platform } from "react-native";
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
 );
@@ -61,6 +68,10 @@ if (typeof global !== "undefined") {
   // Polyfill for atob
   global.btoa = encode;
   global.atob = decode;
+}
+
+if (Platform.OS === "web" && typeof window !== "undefined") {
+  maybeCompleteAuthSession();
 }
 
 export type ErrorProps = {
@@ -136,10 +147,25 @@ export const KindeAuthProvider = ({
   const [isStorageReady, setIsStorageReady] = useState(false);
 
   useEffect(() => {
+    const getStorageInstance = async (): Promise<SessionManager> => {
+      if (Platform.OS === "web") {
+        if (typeof window !== "undefined" && typeof window.localStorage !== "undefined") {
+          return new LocalStorage();
+        }
+
+        console.warn(
+          "[Kinde] Falling back to in-memory storage; session data will not persist between reloads.",
+        );
+        return new MemoryStorage();
+      }
+
+      const ExpoStore = await ExpoSecureStore.default();
+      return new ExpoStore();
+    };
+
     const initializeStorage = async () => {
       try {
-        const ExpoStore = await ExpoSecureStore.default();
-        const storageInstance = new ExpoStore();
+        const storageInstance = await getStorageInstance();
         setActiveStorage(storageInstance);
         setStorage(storageInstance);
         setIsStorageReady(true);
