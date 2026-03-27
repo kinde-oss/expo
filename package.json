@@ -58,7 +58,7 @@
     "@kinde/js-utils": "0.18.3",
     "@kinde/jwt-decoder": "^0.2.0",
     "@kinde/jwt-validator": "^0.4.0",
-    "@vitejs/plugin-react": "^4.3.1",
+    "@vitejs/plugin-react": "^6.0.0",
     "base-64": "^1.0.0",
     "dotenv": "^16.4.5",
     "expo-auth-session": "^5.5.2",
