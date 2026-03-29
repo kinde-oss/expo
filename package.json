@@ -50,7 +50,7 @@
     "expo-constants": "^16.0.2",
     "prettier": "^3.2.5",
     "typescript": "^5.8.3",
-    "vite": "^6.2.5",
+    "vite": "^8.0.0",
     "vite-plugin-dts": "^4.5.3",
     "vitest": "^1.5.0"
   },
