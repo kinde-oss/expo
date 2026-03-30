@@ -63,7 +63,7 @@
     "@kinde/jwt-validator": "^0.4.0",
     "@vitejs/plugin-react": "^6.0.1",
     "base-64": "^1.0.0",
-    "dotenv": "^16.4.5",
+    "dotenv": "^17.0.0",
     "expo-auth-session": "^5.5.2",
     "expo-crypto": "^13.0.2",
     "expo-linking": "^6.3.1",
