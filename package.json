@@ -27,6 +27,9 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "version": "0.5.2",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -50,7 +53,7 @@
     "expo-constants": "^16.0.2",
     "prettier": "^3.2.5",
     "typescript": "^5.8.3",
-    "vite": "^6.2.5",
+    "vite": "^8.0.3",
     "vite-plugin-dts": "^4.5.3",
     "vitest": "^1.5.0"
   },
@@ -58,7 +61,7 @@
     "@kinde/js-utils": "0.18.3",
     "@kinde/jwt-decoder": "^0.2.0",
     "@kinde/jwt-validator": "^0.4.0",
-    "@vitejs/plugin-react": "^4.3.1",
+    "@vitejs/plugin-react": "^6.0.1",
     "base-64": "^1.0.0",
     "dotenv": "^16.4.5",
     "expo-auth-session": "^5.5.2",
