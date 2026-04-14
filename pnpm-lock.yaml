@@ -16,7 +16,7 @@ importers:
         version: 0.2.0
       '@kinde/jwt-validator':
         specifier: ^0.4.0
-        version: 0.4.0
+        version: 0.4.1
       '@vitejs/plugin-react':
         specifier: ^6.0.1
         version: 6.0.1(babel-plugin-react-compiler@1.0.0)(vite@8.0.8(@types/node@22.19.17)(terser@5.46.1)(yaml@2.8.3))
@@ -1036,8 +1036,8 @@ packages:
   '@kinde/jwt-decoder@0.2.0':
     resolution: {integrity: sha512-dqtwCmAvywOVLkkUfp4UbqdvVLsK0cvHsJhU3gDY9rgjAdZhGw0vCreBW6j3MFLxbi6cZm7pMU7/O5SJgvN5Rw==}
 
-  '@kinde/jwt-validator@0.4.0':
-    resolution: {integrity: sha512-aseXLTD/rh/rZ2v85Xy493CEtuC49MA4Hbt6ObccqSJfIGLAeMrAtBh2m9DleigVkMuZ/99/U4PqLnaVDLt5OQ==}
+  '@kinde/jwt-validator@0.4.1':
+    resolution: {integrity: sha512-q6Pt9UnebdcQb6pL2LpEBfkvG0SBcrA602Y5mz4XGK2BWP3bBv918FgF9Dkmm6DXRG649IwiTVBhdpoM+rbNOA==}
 
   '@microsoft/api-extractor-model@7.33.4':
     resolution: {integrity: sha512-u1LTaNTikZAQ9uK6KG1Ms7nvNedsnODnspq/gH2dcyETWvH4hVNGNDvRAEutH66kAmxA4/necElqGNs1FggC8w==}
@@ -2926,8 +2926,8 @@ packages:
   jsonfile@6.2.0:
     resolution: {integrity: sha512-FGuPw30AdOIUTRMC2OMRtQV+jkVj2cfPqSeWXv1NEAJ1qZ5zb1X6z1mFhbfOB/iy3ssJCD+3KuZ8r8C3uVFlAg==}
 
-  jsrsasign@11.1.1:
-    resolution: {integrity: sha512-6w95OOXH8DNeGxakqLndBEqqwQ6A70zGaky1oxfg8WVLWOnghTfJsc5Tknx+Z88MHSb1bGLcqQHImOF8Lk22XA==}
+  jsrsasign@11.1.2:
+    resolution: {integrity: sha512-GJuqiU/Grs6BaBBXMAZM9kxhsBrksZE0pF3qIfpkopMd7OMJ9zZmE/+CpV//97srfEyyyq1Ec0ELQtSlW/gPTA==}
 
   jsx-ast-utils@3.3.5:
     resolution: {integrity: sha512-ZZow9HBI5O6EPgSJLUb8n2NKgmVWTwCvHGwFuJlMjvLFqlGG6pjirPhtdsseaLZjSibD8eegzmYpUZwoIlj2cQ==}
@@ -5593,10 +5593,10 @@ snapshots:
 
   '@kinde/jwt-decoder@0.2.0': {}
 
-  '@kinde/jwt-validator@0.4.0':
+  '@kinde/jwt-validator@0.4.1':
     dependencies:
       '@kinde/jwt-decoder': 0.2.0
-      jsrsasign: 11.1.1
+      jsrsasign: 11.1.2
 
   '@microsoft/api-extractor-model@7.33.4(@types/node@22.19.17)':
     dependencies:
@@ -7809,7 +7809,7 @@ snapshots:
     optionalDependencies:
       graceful-fs: 4.2.11
 
-  jsrsasign@11.1.1: {}
+  jsrsasign@11.1.2: {}
 
   jsx-ast-utils@3.3.5:
     dependencies:
