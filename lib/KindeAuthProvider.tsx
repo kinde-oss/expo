@@ -56,11 +56,11 @@ export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
 );
 
-// global is unavailable for web `expo export` script
-if (typeof global !== "undefined") {
+// globalThis is unavailable for web `expo export` script
+if (typeof globalThis !== "undefined") {
   // Polyfill for atob
-  global.btoa = encode;
-  global.atob = decode;
+  globalThis.btoa = encode;
+  globalThis.atob = decode;
 }
 
 export type ErrorProps = {
