@@ -28,8 +28,8 @@ export type LoginResponse = LoginSuccessResponse | LoginFailureResponse;
 
 export type UserProfile = {
   id: string;
-  givenName: string;
-  familyName: string;
-  email: string;
-  picture: string;
+  givenName?: string;
+  familyName?: string;
+  email?: string;
+  picture?: string;
 };
