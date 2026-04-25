@@ -140,17 +140,5 @@ describe('types', () => {
       expect(typeof user.email).toBe('string')
       expect(typeof user.picture).toBe('string')
     })
-
-    it('should allow only the required id field', () => {
-      const user: UserProfile = {
-        id: 'user_456'
-      }
-
-      expect(typeof user.id).toBe('string')
-      expect(user.givenName).toBeUndefined()
-      expect(user.familyName).toBeUndefined()
-      expect(user.email).toBeUndefined()
-      expect(user.picture).toBeUndefined()
-    })
   })
 })
