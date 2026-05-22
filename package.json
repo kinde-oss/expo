@@ -71,7 +71,7 @@
     "expo-web-browser": "^56.0.0"
   },
   "peerDependencies": {
-    "expo": "*",
+    "expo": "^56.0.0",
     "react-native": "*"
   },
   "publishConfig": {

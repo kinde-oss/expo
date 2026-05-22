@@ -10,9 +10,15 @@ You can also use the [Expo starter kit](https://github.com/kinde-starter-kits/ex
 npx nypm add @kinde/expo
 ```
 
+This package targets Expo SDK 56.
+
 ## **Environment variables**
 
 The redirection URL is automatically computed using Expo Auth Session `makeRedirectUri` function. You can find more information about this function [here](https://docs.expo.dev/versions/latest/sdk/auth-session/#makeRedirectUri).
+
+For native auth redirects in development builds or standalone apps, Expo Auth Session requires a configured app URI scheme (for example `expo.scheme` in `app.json`) or an explicit `redirectURL` passed to `login` / `register`.
+
+Per the official Expo SDK 56 changelogs for `expo-constants` and `expo-web-browser`, native builds now require iOS/tvOS 16.4+ and macOS 13.4+.
 
 ## Integrate with your app
 
