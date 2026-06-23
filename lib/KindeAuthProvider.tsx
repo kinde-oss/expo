@@ -288,26 +288,28 @@ export const KindeAuthProvider = ({
           }
         }
 
-        await storage.setSessionItem(
-          StorageKeys.refreshToken,
-          exchangeCodeResponse.refreshToken,
-        );
+        if (exchangeCodeResponse.refreshToken) {
+          await storage.setSessionItem(
+            StorageKeys.refreshToken,
+            exchangeCodeResponse.refreshToken,
+          );
 
-        setRefreshTimer(exchangeCodeResponse.expiresIn || 60, async () => {
-          try {
-            await refreshToken({ domain, clientId, onRefresh });
-          } catch (error) {
-            callbacks?.onError?.(
-              {
-                error: "ERR_REFRESH",
-                errorDescription:
-                  error instanceof Error ? error.message : "Unknown error",
-              },
-              {},
-              contextValue,
-            );
-          }
-        });
+          setRefreshTimer(exchangeCodeResponse.expiresIn || 60, async () => {
+            try {
+              await refreshToken({ domain, clientId, onRefresh });
+            } catch (error) {
+              callbacks?.onError?.(
+                {
+                  error: "ERR_REFRESH",
+                  errorDescription:
+                    error instanceof Error ? error.message : "Unknown error",
+                },
+                {},
+                contextValue,
+              );
+            }
+          });
+        }
         const user = await getUserProfile();
         if (user) {
           callbacks?.onSuccess?.(user, {}, contextValue);
