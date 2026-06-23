@@ -18,8 +18,6 @@ The redirection URL is automatically computed using Expo Auth Session `makeRedir
 
 For native auth redirects in development builds or standalone apps, Expo Auth Session requires a configured app URI scheme (for example `expo.scheme` in `app.json`) or an explicit `redirectURL` passed to `login` / `register`.
 
-Per the official Expo SDK 56 changelogs for `expo-constants` and `expo-web-browser`, native builds now require iOS/tvOS 16.4+ and macOS 13.4+.
-
 ## Integrate with your app
 
 Setup the Kinde Provider in your App.js file.

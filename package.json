@@ -36,7 +36,7 @@
     "prepare": "npm run build",
     "prepare-utils": "mkdir -p utils",
     "preview": "vite preview",
-    "test": "vitest --passWithNoTests",
+    "test": "vitest",
     "test:coverage": "vitest --coverage",
     "lint": "prettier --check . && eslint --ext .js,.jsx,.ts,.tsx .",
     "lint:fix": "prettier --write . && eslint --ext .js,.jsx,.ts,.tsx . --fix"
