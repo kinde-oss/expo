@@ -39,7 +39,7 @@ export const completePendingWebAuthSession = (
   platformOS: string,
   windowObject?: unknown,
 ): void => {
-  if (platformOS === "web" && typeof windowObject !== "undefined") {
+  if (platformOS === "web" && windowObject != null) {
     maybeCompleteAuthSession();
   }
 };
@@ -51,6 +51,8 @@ export const createSessionStorage = async ({
 }: StorageFactoryOptions): Promise<SessionManager> => {
   if (platformOS === "web") {
     if (canUseLocalStorage(windowObject)) {
+      // The provider passes the real browser window in production, and
+      // @kinde/js-utils LocalStorage reads from the global localStorage.
       return new LocalStorage();
     }
 

@@ -109,4 +109,10 @@ describe("storage helpers", () => {
 
     expect(maybeCompleteAuthSession).not.toHaveBeenCalled();
   });
+
+  it("does not complete auth sessions when windowObject is null", () => {
+    completePendingWebAuthSession("web", null);
+
+    expect(maybeCompleteAuthSession).not.toHaveBeenCalled();
+  });
 });
