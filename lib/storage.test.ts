@@ -1,0 +1,112 @@
+import { LocalStorage, MemoryStorage } from "@kinde/js-utils";
+import { maybeCompleteAuthSession } from "expo-web-browser";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  canUseLocalStorage,
+  completePendingWebAuthSession,
+  createSessionStorage,
+} from "./storage";
+
+vi.mock("expo-web-browser", () => ({
+  maybeCompleteAuthSession: vi.fn(),
+}));
+
+describe("storage helpers", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
+  });
+
+  it("detects working localStorage", () => {
+    const localStorage = {
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    };
+
+    expect(canUseLocalStorage({ localStorage })).toBe(true);
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      "__kinde_storage_test__",
+      "test",
+    );
+    expect(localStorage.removeItem).toHaveBeenCalledWith(
+      "__kinde_storage_test__",
+    );
+  });
+
+  it("rejects unavailable localStorage", () => {
+    expect(canUseLocalStorage()).toBe(false);
+  });
+
+  it("rejects localStorage when the browser blocks access", () => {
+    const localStorage = {
+      setItem: vi.fn(() => {
+        throw new Error("blocked");
+      }),
+      removeItem: vi.fn(),
+    };
+
+    expect(canUseLocalStorage({ localStorage })).toBe(false);
+  });
+
+  it("uses LocalStorage on web when browser storage is available", async () => {
+    const storage = await createSessionStorage({
+      platformOS: "web",
+      windowObject: {
+        localStorage: {
+          setItem: vi.fn(),
+          removeItem: vi.fn(),
+        },
+      },
+    });
+
+    expect(storage).toBeInstanceOf(LocalStorage);
+  });
+
+  it("falls back to MemoryStorage on web when browser storage is unavailable", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const storage = await createSessionStorage({
+      platformOS: "web",
+      windowObject: {
+        localStorage: {
+          setItem: vi.fn(() => {
+            throw new Error("blocked");
+          }),
+          removeItem: vi.fn(),
+        },
+      },
+    });
+
+    expect(storage).toBeInstanceOf(MemoryStorage);
+    expect(warnSpy).toHaveBeenCalledOnce();
+  });
+
+  it("uses the Expo secure store loader on native platforms", async () => {
+    class NativeStore extends MemoryStorage {}
+
+    const loadExpoSecureStore = vi.fn(
+      async () => NativeStore,
+    ) as typeof import("@kinde/js-utils").ExpoSecureStore.default;
+
+    const storage = await createSessionStorage({
+      platformOS: "ios",
+      loadExpoSecureStore,
+    });
+
+    expect(loadExpoSecureStore).toHaveBeenCalledOnce();
+    expect(storage).toBeInstanceOf(NativeStore);
+  });
+
+  it("completes pending auth sessions on web", () => {
+    completePendingWebAuthSession("web", {});
+
+    expect(maybeCompleteAuthSession).toHaveBeenCalledOnce();
+  });
+
+  it("does not complete auth sessions outside web", () => {
+    completePendingWebAuthSession("ios", {});
+    completePendingWebAuthSession("web", undefined);
+
+    expect(maybeCompleteAuthSession).not.toHaveBeenCalled();
+  });
+});

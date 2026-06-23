@@ -14,6 +14,8 @@ npx nypm add @kinde/expo
 
 The redirection URL is automatically computed using Expo Auth Session `makeRedirectUri` function. You can find more information about this function [here](https://docs.expo.dev/versions/latest/sdk/auth-session/#makeRedirectUri).
 
+On web, the provider completes pending auth sessions automatically and uses browser `localStorage` when it is available. If browser storage is blocked, it falls back to in-memory storage for the current session.
+
 ## Integrate with your app
 
 Setup the Kinde Provider in your App.js file.

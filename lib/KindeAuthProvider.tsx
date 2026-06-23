@@ -15,7 +15,6 @@ import {
   PortalPage,
 } from "@kinde/js-utils";
 import {
-  ExpoSecureStore,
   mapLoginMethodParamsForUrl,
   PromptTypes,
   setActiveStorage,
@@ -52,6 +51,8 @@ import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 import Constants from "expo-constants";
 import { decode, encode } from "base-64";
+import { Platform } from "react-native";
+import { completePendingWebAuthSession, createSessionStorage } from "./storage";
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
 );
@@ -62,6 +63,11 @@ if (typeof globalThis !== "undefined") {
   globalThis.btoa = encode;
   globalThis.atob = decode;
 }
+
+completePendingWebAuthSession(
+  Platform.OS,
+  typeof window !== "undefined" ? window : undefined,
+);
 
 export type ErrorProps = {
   error: string;
@@ -138,8 +144,10 @@ export const KindeAuthProvider = ({
   useEffect(() => {
     const initializeStorage = async () => {
       try {
-        const ExpoStore = await ExpoSecureStore.default();
-        const storageInstance = new ExpoStore();
+        const storageInstance = await createSessionStorage({
+          platformOS: Platform.OS,
+          windowObject: typeof window !== "undefined" ? window : undefined,
+        });
         setActiveStorage(storageInstance);
         setStorage(storageInstance);
         setIsStorageReady(true);
