@@ -10,7 +10,7 @@ You can also use the [Expo starter kit](https://github.com/kinde-starter-kits/ex
 npx nypm add @kinde/expo
 ```
 
-This package targets Expo SDK 56.
+This package targets Expo SDK 55.
 
 ## **Environment variables**
 
