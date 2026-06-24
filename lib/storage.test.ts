@@ -1,4 +1,10 @@
-import { LocalStorage, MemoryStorage } from "@kinde/js-utils";
+import {
+  clearInsecureStorage,
+  getInsecureStorage,
+  LocalStorage,
+  MemoryStorage,
+  storageSettings,
+} from "@kinde/js-utils";
 import { maybeCompleteAuthSession } from "expo-web-browser";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -13,6 +19,8 @@ vi.mock("expo-web-browser", () => ({
 
 describe("storage helpers", () => {
   afterEach(() => {
+    clearInsecureStorage();
+    storageSettings.useInsecureForRefreshToken = false;
     vi.clearAllMocks();
     vi.restoreAllMocks();
   });
@@ -48,7 +56,7 @@ describe("storage helpers", () => {
     expect(canUseLocalStorage({ localStorage })).toBe(false);
   });
 
-  it("uses LocalStorage on web when browser storage is available", async () => {
+  it("uses MemoryStorage as active web storage and LocalStorage only for insecure persistence", async () => {
     const storage = await createSessionStorage({
       platformOS: "web",
       windowObject: {
@@ -59,7 +67,9 @@ describe("storage helpers", () => {
       },
     });
 
-    expect(storage).toBeInstanceOf(LocalStorage);
+    expect(storage).toBeInstanceOf(MemoryStorage);
+    expect(getInsecureStorage()).toBeInstanceOf(LocalStorage);
+    expect(storageSettings.useInsecureForRefreshToken).toBe(true);
   });
 
   it("falls back to MemoryStorage on web when browser storage is unavailable", async () => {
@@ -78,6 +88,8 @@ describe("storage helpers", () => {
     });
 
     expect(storage).toBeInstanceOf(MemoryStorage);
+    expect(getInsecureStorage()).toBeNull();
+    expect(storageSettings.useInsecureForRefreshToken).toBe(false);
     expect(warnSpy).toHaveBeenCalledOnce();
   });
 
@@ -95,6 +107,8 @@ describe("storage helpers", () => {
 
     expect(loadExpoSecureStore).toHaveBeenCalledOnce();
     expect(storage).toBeInstanceOf(NativeStore);
+    expect(getInsecureStorage()).toBeNull();
+    expect(storageSettings.useInsecureForRefreshToken).toBe(false);
   });
 
   it("completes pending auth sessions on web", () => {

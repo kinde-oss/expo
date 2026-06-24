@@ -10,11 +10,15 @@ You can also use the [Expo starter kit](https://github.com/kinde-starter-kits/ex
 npx nypm add @kinde/expo
 ```
 
+This package targets Expo SDK 56.
+
 ## **Environment variables**
 
-The redirection URL is automatically computed using Expo Auth Session `makeRedirectUri` function. You can find more information about this function [here](https://docs.expo.dev/versions/latest/sdk/auth-session/#makeRedirectUri).
+The redirection URL is automatically computed using Expo Auth Session `makeRedirectUri` function. You can find more information in the [Expo Auth Session `makeRedirectUri` docs](https://docs.expo.dev/versions/latest/sdk/auth-session/#makeRedirectUri).
 
-On web, the provider completes pending auth sessions automatically and uses browser `localStorage` when it is available. If browser storage is blocked, it falls back to in-memory storage for the current session.
+For native auth redirects in development builds or standalone apps, Expo Auth Session requires a configured app URI scheme (for example `expo.scheme` in `app.json`) or an explicit `redirectURL` passed to `login` / `register`.
+
+On web, the provider completes pending auth sessions automatically, keeps access and ID tokens in memory, and uses browser `localStorage` only for refresh-token persistence when it is available. If browser storage is blocked, it falls back to an in-memory-only session.
 
 ## Integrate with your app
 

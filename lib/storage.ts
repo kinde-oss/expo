@@ -1,8 +1,11 @@
 import {
+  clearInsecureStorage,
   ExpoSecureStore,
   LocalStorage,
   MemoryStorage,
   SessionManager,
+  setInsecureStorage,
+  storageSettings,
 } from "@kinde/js-utils";
 import { maybeCompleteAuthSession } from "expo-web-browser";
 
@@ -44,22 +47,33 @@ export const completePendingWebAuthSession = (
   }
 };
 
+const resetInsecureStorage = (): void => {
+  clearInsecureStorage();
+  storageSettings.useInsecureForRefreshToken = false;
+};
+
 export const createSessionStorage = async ({
   platformOS,
   windowObject,
   loadExpoSecureStore = ExpoSecureStore.default,
 }: StorageFactoryOptions): Promise<SessionManager> => {
+  resetInsecureStorage();
+
   if (platformOS === "web") {
+    const memoryStorage = new MemoryStorage();
+
     if (canUseLocalStorage(windowObject)) {
       // The provider passes the real browser window in production, and
       // @kinde/js-utils LocalStorage reads from the global localStorage.
-      return new LocalStorage();
+      setInsecureStorage(new LocalStorage());
+      storageSettings.useInsecureForRefreshToken = true;
+      return memoryStorage;
     }
 
     console.warn(
-      "[Kinde] localStorage is unavailable; using in-memory storage for this session.",
+      "[Kinde] localStorage is unavailable; using in-memory storage only for this session.",
     );
-    return new MemoryStorage();
+    return memoryStorage;
   }
 
   const ExpoStore = await loadExpoSecureStore();
