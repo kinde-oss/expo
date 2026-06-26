@@ -150,15 +150,24 @@ const configureProviderState = (storage: {
 describe("KindeAuthProvider Expo SDK 56 migration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
     vi.resetModules();
     mocked.getInsecureStorage.mockReturnValue(null);
     mocked.storageSettings.useInsecureForRefreshToken = false;
   });
 
   it("completes pending web auth sessions when the module loads", async () => {
+    vi.stubGlobal("window", {});
+
     await import("./KindeAuthProvider");
 
     expect(mocked.maybeCompleteAuthSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips pending web auth completion during import when no browser window exists", async () => {
+    await import("./KindeAuthProvider");
+
+    expect(mocked.maybeCompleteAuthSession).not.toHaveBeenCalled();
   });
 
   it("uses Expo-managed redirect inference instead of a manual native flag", async () => {

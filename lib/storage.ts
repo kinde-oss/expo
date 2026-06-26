@@ -146,8 +146,8 @@ export const performRemoteLogout = async ({
   }
 
   if (discovery?.endSessionEndpoint) {
-    await openAuthSession(
-      `${discovery.endSessionEndpoint}?redirect=${redirectUri}`,
-    );
+    const logoutUrl = new URL(discovery.endSessionEndpoint);
+    logoutUrl.searchParams.set("redirect", redirectUri);
+    await openAuthSession(logoutUrl.toString());
   }
 };

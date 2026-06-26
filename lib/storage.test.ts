@@ -254,8 +254,36 @@ describe("storage helpers", () => {
       revokeAccessToken,
     });
 
-    expect(openAuthSession).toHaveBeenCalledWith(
-      "https://example.kinde.com/logout?redirect=myapp://callback",
+    const logoutUrl = new URL(openAuthSession.mock.calls[0][0]);
+
+    expect(logoutUrl.origin + logoutUrl.pathname).toBe(
+      "https://example.kinde.com/logout",
+    );
+    expect(logoutUrl.searchParams.get("redirect")).toBe("myapp://callback");
+    expect(revokeAccessToken).not.toHaveBeenCalled();
+  });
+
+  it("preserves existing logout query params while encoding the redirect URI", async () => {
+    const openAuthSession = vi.fn(async () => undefined);
+    const revokeAccessToken = vi.fn(async () => undefined);
+
+    await performRemoteLogout({
+      accessToken: null,
+      discovery: {
+        endSessionEndpoint: "https://example.kinde.com/logout?client=expo",
+        revocationEndpoint: "https://example.kinde.com/revoke",
+      },
+      redirectUri: "myapp://callback?mode=web&return=/home",
+      revokeToken: false,
+      openAuthSession,
+      revokeAccessToken,
+    });
+
+    const logoutUrl = new URL(openAuthSession.mock.calls[0][0]);
+
+    expect(logoutUrl.searchParams.get("client")).toBe("expo");
+    expect(logoutUrl.searchParams.get("redirect")).toBe(
+      "myapp://callback?mode=web&return=/home",
     );
     expect(revokeAccessToken).not.toHaveBeenCalled();
   });

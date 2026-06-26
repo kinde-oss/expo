@@ -31,11 +31,7 @@ import {
   revokeAsync,
   TokenTypeHint,
 } from "expo-auth-session";
-import {
-  maybeCompleteAuthSession,
-  openAuthSessionAsync,
-  openBrowserAsync,
-} from "expo-web-browser";
+import { openAuthSessionAsync, openBrowserAsync } from "expo-web-browser";
 import {
   createContext,
   useEffect,
@@ -57,6 +53,7 @@ import { decode, encode } from "base-64";
 import { Platform } from "react-native";
 import {
   clearPersistedRefreshToken,
+  completePendingWebAuthSession,
   createSessionStorage,
   performRemoteLogout,
   persistRefreshToken,
@@ -72,7 +69,10 @@ if (typeof globalThis !== "undefined") {
   globalThis.atob = decode;
 }
 
-maybeCompleteAuthSession();
+completePendingWebAuthSession(
+  Platform.OS,
+  typeof window !== "undefined" ? window : undefined,
+);
 
 export type ErrorProps = {
   error: string;
