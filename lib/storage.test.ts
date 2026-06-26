@@ -284,7 +284,7 @@ describe("storage helpers", () => {
     );
   });
 
-  it("still uses the hosted logout endpoint when revokeToken is requested", async () => {
+  it("prioritizes hosted logout when discovery.endSessionEndpoint is present", async () => {
     const openAuthSession = vi.fn(async () => undefined);
 
     await performRemoteLogout({
