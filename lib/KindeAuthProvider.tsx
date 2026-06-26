@@ -56,6 +56,7 @@ import {
   clearPersistedRefreshToken,
   completePendingWebAuthSession,
   createSessionStorage,
+  performRemoteLogout,
   persistRefreshToken,
 } from "./storage";
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
@@ -456,34 +457,39 @@ export const KindeAuthProvider = ({
       setIsAuthenticated(false);
     };
 
-    return new Promise(async (resolve) => {
-      const accesstoken = (await storage.getSessionItem(
-        StorageKeys.accessToken,
-      )) as string;
-      if (accesstoken && discovery) {
-        if (revokeToken) {
-          revokeAsync(
-            { token: accesstoken!, tokenTypeHint: TokenTypeHint.AccessToken },
-            discovery,
-          )
-            .then(async () => {
-              await cleanup();
-              resolve({ success: true });
-            })
-            .catch((err: unknown) => {
-              console.error(err);
-              resolve({ success: false });
-            });
-        } else {
-          await openAuthSessionAsync(
-            `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`,
+    const accessToken = (await storage.getSessionItem(
+      StorageKeys.accessToken,
+    )) as string | null;
+
+    let success = true;
+
+    try {
+      await performRemoteLogout({
+        accessToken,
+        discovery,
+        redirectUri,
+        revokeToken,
+        openAuthSession: async (url) => openAuthSessionAsync(url),
+        revokeAccessToken: async (token, revokeDiscovery) => {
+          await revokeAsync(
+            { token, tokenTypeHint: TokenTypeHint.AccessToken },
+            revokeDiscovery,
           );
-          await cleanup();
-          resolve({ success: true });
-        }
-      }
-      resolve({ success: true });
-    });
+        },
+      });
+    } catch (err: unknown) {
+      console.error(err);
+      success = false;
+    }
+
+    try {
+      await cleanup();
+    } catch (err: unknown) {
+      console.error(err);
+      success = false;
+    }
+
+    return { success };
   }
 
   /**

@@ -9,6 +9,7 @@ import {
   StorageKeys,
   storageSettings,
 } from "@kinde/js-utils";
+import type { DiscoveryDocument } from "expo-auth-session";
 import { maybeCompleteAuthSession } from "expo-web-browser";
 
 type WebWindowLike = {
@@ -22,6 +23,21 @@ type StorageFactoryOptions = {
   platformOS: string;
   windowObject?: WebWindowLike;
   loadExpoSecureStore?: typeof ExpoSecureStore.default;
+};
+
+type RemoteLogoutOptions = {
+  accessToken: string | null;
+  discovery: Pick<
+    DiscoveryDocument,
+    "endSessionEndpoint" | "revocationEndpoint"
+  > | null;
+  redirectUri: string;
+  revokeToken?: boolean;
+  openAuthSession: (url: string) => Promise<unknown>;
+  revokeAccessToken: (
+    token: string,
+    discovery: Pick<DiscoveryDocument, "revocationEndpoint">,
+  ) => Promise<unknown>;
 };
 
 const STORAGE_TEST_KEY = "__kinde_storage_test__";
@@ -87,6 +103,7 @@ export const persistRefreshToken = async (
   refreshToken: string | null | undefined,
 ): Promise<void> => {
   if (!refreshToken) {
+    await clearPersistedRefreshToken(storage);
     return;
   }
 
@@ -110,5 +127,27 @@ export const clearPersistedRefreshToken = async (
   const insecureStorage = getInsecureStorage();
   if (insecureStorage && insecureStorage !== storage) {
     await insecureStorage.removeSessionItem(StorageKeys.refreshToken);
+  }
+};
+
+export const performRemoteLogout = async ({
+  accessToken,
+  discovery,
+  redirectUri,
+  revokeToken,
+  openAuthSession,
+  revokeAccessToken,
+}: RemoteLogoutOptions): Promise<void> => {
+  if (revokeToken) {
+    if (accessToken && discovery) {
+      await revokeAccessToken(accessToken, discovery);
+    }
+    return;
+  }
+
+  if (discovery?.endSessionEndpoint) {
+    await openAuthSession(
+      `${discovery.endSessionEndpoint}?redirect=${redirectUri}`,
+    );
   }
 };

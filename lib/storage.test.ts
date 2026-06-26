@@ -13,6 +13,7 @@ import {
   clearPersistedRefreshToken,
   completePendingWebAuthSession,
   createSessionStorage,
+  performRemoteLogout,
   persistRefreshToken,
 } from "./storage";
 
@@ -179,6 +180,27 @@ describe("storage helpers", () => {
     expect(getInsecureStorage()).toBeNull();
   });
 
+  it("clears stale persisted refresh tokens when no new refresh token is issued", async () => {
+    installLocalStorageStub();
+
+    const storage = await createSessionStorage({
+      platformOS: "web",
+      windowObject: {
+        localStorage: {
+          setItem: vi.fn(),
+          removeItem: vi.fn(),
+        },
+      },
+    });
+
+    await persistRefreshToken(storage, "refresh-token");
+    await persistRefreshToken(storage, undefined);
+
+    expect(
+      await getInsecureStorage()?.getSessionItem(StorageKeys.refreshToken),
+    ).toBeNull();
+  });
+
   it("uses the Expo secure store loader on native platforms", async () => {
     class NativeStore extends MemoryStorage {}
 
@@ -214,5 +236,67 @@ describe("storage helpers", () => {
     completePendingWebAuthSession("web", null);
 
     expect(maybeCompleteAuthSession).not.toHaveBeenCalled();
+  });
+
+  it("opens the remote logout session even when only persisted web state remains", async () => {
+    const openAuthSession = vi.fn(async () => undefined);
+    const revokeAccessToken = vi.fn(async () => undefined);
+
+    await performRemoteLogout({
+      accessToken: null,
+      discovery: {
+        endSessionEndpoint: "https://example.kinde.com/logout",
+        revocationEndpoint: "https://example.kinde.com/revoke",
+      },
+      redirectUri: "myapp://callback",
+      revokeToken: false,
+      openAuthSession,
+      revokeAccessToken,
+    });
+
+    expect(openAuthSession).toHaveBeenCalledWith(
+      "https://example.kinde.com/logout?redirect=myapp://callback",
+    );
+    expect(revokeAccessToken).not.toHaveBeenCalled();
+  });
+
+  it("revokes the access token when revokeToken is requested and a token exists", async () => {
+    const openAuthSession = vi.fn(async () => undefined);
+    const revokeAccessToken = vi.fn(async () => undefined);
+
+    await performRemoteLogout({
+      accessToken: "access-token",
+      discovery: {
+        endSessionEndpoint: "https://example.kinde.com/logout",
+        revocationEndpoint: "https://example.kinde.com/revoke",
+      },
+      redirectUri: "myapp://callback",
+      revokeToken: true,
+      openAuthSession,
+      revokeAccessToken,
+    });
+
+    expect(revokeAccessToken).toHaveBeenCalledOnce();
+    expect(openAuthSession).not.toHaveBeenCalled();
+  });
+
+  it("skips remote revoke when revokeToken is requested but no access token exists", async () => {
+    const openAuthSession = vi.fn(async () => undefined);
+    const revokeAccessToken = vi.fn(async () => undefined);
+
+    await performRemoteLogout({
+      accessToken: null,
+      discovery: {
+        endSessionEndpoint: "https://example.kinde.com/logout",
+        revocationEndpoint: "https://example.kinde.com/revoke",
+      },
+      redirectUri: "myapp://callback",
+      revokeToken: true,
+      openAuthSession,
+      revokeAccessToken,
+    });
+
+    expect(revokeAccessToken).not.toHaveBeenCalled();
+    expect(openAuthSession).not.toHaveBeenCalled();
   });
 });
