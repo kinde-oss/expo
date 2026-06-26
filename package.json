@@ -50,7 +50,7 @@
     "@vitest/coverage-v8": "^4.0.0",
     "eslint": "^10.0.0",
     "eslint-plugin-react": "^7.37.5",
-    "expo-constants": "^55.0.0",
+    "expo-constants": "^56.0.0",
     "prettier": "^3.2.5",
     "typescript": "^6.0.0",
     "vite": "^8.0.3",
@@ -64,14 +64,14 @@
     "@vitejs/plugin-react": "^6.0.1",
     "base-64": "^1.0.0",
     "dotenv": "^17.0.0",
-    "expo-auth-session": "^55.0.0",
-    "expo-crypto": "^55.0.0",
-    "expo-linking": "^55.0.0",
-    "expo-secure-store": "^55.0.0",
-    "expo-web-browser": "^55.0.0"
+    "expo-auth-session": "^56.0.0",
+    "expo-crypto": "^56.0.0",
+    "expo-linking": "^56.0.0",
+    "expo-secure-store": "^56.0.0",
+    "expo-web-browser": "^56.0.0"
   },
   "peerDependencies": {
-    "expo": "*",
+    "expo": "^56.0.0",
     "react-native": "*"
   },
   "publishConfig": {

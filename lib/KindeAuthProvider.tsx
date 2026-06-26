@@ -32,7 +32,11 @@ import {
   revokeAsync,
   TokenTypeHint,
 } from "expo-auth-session";
-import { openAuthSessionAsync, openBrowserAsync } from "expo-web-browser";
+import {
+  maybeCompleteAuthSession,
+  openAuthSessionAsync,
+  openBrowserAsync,
+} from "expo-web-browser";
 import {
   createContext,
   useEffect,
@@ -50,7 +54,6 @@ import {
 } from "./types";
 import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
-import Constants from "expo-constants";
 import { decode, encode } from "base-64";
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
@@ -62,6 +65,8 @@ if (typeof globalThis !== "undefined") {
   globalThis.btoa = encode;
   globalThis.atob = decode;
 }
+
+maybeCompleteAuthSession();
 
 export type ErrorProps = {
   error: string;
@@ -130,7 +135,7 @@ export const KindeAuthProvider = ({
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const redirectUri = makeRedirectUri({ native: Constants.isDevice });
+  const redirectUri = makeRedirectUri();
 
   const [storage, setStorage] = useState<SessionManager>();
   const [isStorageReady, setIsStorageReady] = useState(false);
@@ -283,26 +288,28 @@ export const KindeAuthProvider = ({
           }
         }
 
-        await storage.setSessionItem(
-          StorageKeys.refreshToken,
-          exchangeCodeResponse.refreshToken,
-        );
+        if (exchangeCodeResponse.refreshToken) {
+          await storage.setSessionItem(
+            StorageKeys.refreshToken,
+            exchangeCodeResponse.refreshToken,
+          );
 
-        setRefreshTimer(exchangeCodeResponse.expiresIn || 60, async () => {
-          try {
-            await refreshToken({ domain, clientId, onRefresh });
-          } catch (error) {
-            callbacks?.onError?.(
-              {
-                error: "ERR_REFRESH",
-                errorDescription:
-                  error instanceof Error ? error.message : "Unknown error",
-              },
-              {},
-              contextValue,
-            );
-          }
-        });
+          setRefreshTimer(exchangeCodeResponse.expiresIn || 60, async () => {
+            try {
+              await refreshToken({ domain, clientId, onRefresh });
+            } catch (error) {
+              callbacks?.onError?.(
+                {
+                  error: "ERR_REFRESH",
+                  errorDescription:
+                    error instanceof Error ? error.message : "Unknown error",
+                },
+                {},
+                contextValue,
+              );
+            }
+          });
+        }
         const user = await getUserProfile();
         if (user) {
           callbacks?.onSuccess?.(user, {}, contextValue);
