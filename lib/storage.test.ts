@@ -3,14 +3,17 @@ import {
   getInsecureStorage,
   LocalStorage,
   MemoryStorage,
+  StorageKeys,
   storageSettings,
 } from "@kinde/js-utils";
 import { maybeCompleteAuthSession } from "expo-web-browser";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   canUseLocalStorage,
+  clearPersistedRefreshToken,
   completePendingWebAuthSession,
   createSessionStorage,
+  persistRefreshToken,
 } from "./storage";
 
 vi.mock("expo-web-browser", () => ({
@@ -21,9 +24,26 @@ describe("storage helpers", () => {
   afterEach(() => {
     clearInsecureStorage();
     storageSettings.useInsecureForRefreshToken = false;
+    vi.unstubAllGlobals();
     vi.clearAllMocks();
     vi.restoreAllMocks();
   });
+
+  const installLocalStorageStub = () => {
+    const values = new Map<string, string>();
+    const localStorage = {
+      getItem: vi.fn((key: string) => values.get(key) ?? null),
+      setItem: vi.fn((key: string, value: string) => {
+        values.set(key, value);
+      }),
+      removeItem: vi.fn((key: string) => {
+        values.delete(key);
+      }),
+    };
+
+    vi.stubGlobal("localStorage", localStorage);
+    return { localStorage, values };
+  };
 
   it("detects working localStorage", () => {
     const localStorage = {
@@ -57,6 +77,8 @@ describe("storage helpers", () => {
   });
 
   it("uses MemoryStorage as active web storage and LocalStorage only for insecure persistence", async () => {
+    installLocalStorageStub();
+
     const storage = await createSessionStorage({
       platformOS: "web",
       windowObject: {
@@ -91,6 +113,70 @@ describe("storage helpers", () => {
     expect(getInsecureStorage()).toBeNull();
     expect(storageSettings.useInsecureForRefreshToken).toBe(false);
     expect(warnSpy).toHaveBeenCalledOnce();
+  });
+
+  it("persists refresh tokens to insecure storage when split web storage is enabled", async () => {
+    installLocalStorageStub();
+
+    const storage = await createSessionStorage({
+      platformOS: "web",
+      windowObject: {
+        localStorage: {
+          setItem: vi.fn(),
+          removeItem: vi.fn(),
+        },
+      },
+    });
+
+    await persistRefreshToken(storage, "refresh-token");
+
+    expect(await storage.getSessionItem(StorageKeys.refreshToken)).toBeNull();
+    expect(
+      await getInsecureStorage()?.getSessionItem(StorageKeys.refreshToken),
+    ).toBe("refresh-token");
+  });
+
+  it("clears refresh tokens from insecure storage on web", async () => {
+    installLocalStorageStub();
+
+    const storage = await createSessionStorage({
+      platformOS: "web",
+      windowObject: {
+        localStorage: {
+          setItem: vi.fn(),
+          removeItem: vi.fn(),
+        },
+      },
+    });
+
+    await persistRefreshToken(storage, "refresh-token");
+    await clearPersistedRefreshToken(storage);
+
+    expect(
+      await getInsecureStorage()?.getSessionItem(StorageKeys.refreshToken),
+    ).toBeNull();
+    expect(await storage.getSessionItem(StorageKeys.refreshToken)).toBeNull();
+  });
+
+  it("persists refresh tokens to active storage when insecure storage is unavailable", async () => {
+    const storage = await createSessionStorage({
+      platformOS: "web",
+      windowObject: {
+        localStorage: {
+          setItem: vi.fn(() => {
+            throw new Error("blocked");
+          }),
+          removeItem: vi.fn(),
+        },
+      },
+    });
+
+    await persistRefreshToken(storage, "refresh-token");
+
+    expect(await storage.getSessionItem(StorageKeys.refreshToken)).toBe(
+      "refresh-token",
+    );
+    expect(getInsecureStorage()).toBeNull();
   });
 
   it("uses the Expo secure store loader on native platforms", async () => {

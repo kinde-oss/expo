@@ -1,10 +1,12 @@
 import {
   clearInsecureStorage,
   ExpoSecureStore,
+  getInsecureStorage,
   LocalStorage,
   MemoryStorage,
   SessionManager,
   setInsecureStorage,
+  StorageKeys,
   storageSettings,
 } from "@kinde/js-utils";
 import { maybeCompleteAuthSession } from "expo-web-browser";
@@ -78,4 +80,35 @@ export const createSessionStorage = async ({
 
   const ExpoStore = await loadExpoSecureStore();
   return new ExpoStore();
+};
+
+export const persistRefreshToken = async (
+  storage: SessionManager,
+  refreshToken: string | null | undefined,
+): Promise<void> => {
+  if (!refreshToken) {
+    return;
+  }
+
+  const insecureStorage = getInsecureStorage();
+  if (storageSettings.useInsecureForRefreshToken && insecureStorage) {
+    await insecureStorage.setSessionItem(
+      StorageKeys.refreshToken,
+      refreshToken,
+    );
+    return;
+  }
+
+  await storage.setSessionItem(StorageKeys.refreshToken, refreshToken);
+};
+
+export const clearPersistedRefreshToken = async (
+  storage: SessionManager,
+): Promise<void> => {
+  await storage.removeSessionItem(StorageKeys.refreshToken);
+
+  const insecureStorage = getInsecureStorage();
+  if (insecureStorage && insecureStorage !== storage) {
+    await insecureStorage.removeSessionItem(StorageKeys.refreshToken);
+  }
 };

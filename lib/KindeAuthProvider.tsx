@@ -52,7 +52,12 @@ import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 import Constants from "expo-constants";
 import { decode, encode } from "base-64";
 import { Platform } from "react-native";
-import { completePendingWebAuthSession, createSessionStorage } from "./storage";
+import {
+  clearPersistedRefreshToken,
+  completePendingWebAuthSession,
+  createSessionStorage,
+  persistRefreshToken,
+} from "./storage";
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
 );
@@ -194,7 +199,8 @@ export const KindeAuthProvider = ({
     if (!authRedirectUri) {
       return {
         success: false,
-        errorMessage: "This library only works on a mobile device",
+        errorMessage:
+          "A valid redirect URL is required for the current platform.",
       };
     }
 
@@ -290,11 +296,7 @@ export const KindeAuthProvider = ({
             setIsAuthenticated(true);
           }
         }
-
-        await storage.setSessionItem(
-          StorageKeys.refreshToken,
-          exchangeCodeResponse.refreshToken,
-        );
+        await persistRefreshToken(storage, exchangeCodeResponse.refreshToken);
 
         setRefreshTimer(exchangeCodeResponse.expiresIn || 60, async () => {
           try {
@@ -448,11 +450,8 @@ export const KindeAuthProvider = ({
       });
     }
     const cleanup = async () => {
-      await storage.removeItems(
-        StorageKeys.accessToken,
-        StorageKeys.idToken,
-        StorageKeys.refreshToken,
-      );
+      await storage.removeItems(StorageKeys.accessToken, StorageKeys.idToken);
+      await clearPersistedRefreshToken(storage);
       callbacks?.onEvent?.(AuthEvent.logout, {}, contextValue);
       setIsAuthenticated(false);
     };
