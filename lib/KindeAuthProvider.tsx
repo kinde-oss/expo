@@ -31,7 +31,11 @@ import {
   revokeAsync,
   TokenTypeHint,
 } from "expo-auth-session";
-import { openAuthSessionAsync, openBrowserAsync } from "expo-web-browser";
+import {
+  maybeCompleteAuthSession,
+  openAuthSessionAsync,
+  openBrowserAsync,
+} from "expo-web-browser";
 import {
   createContext,
   useEffect,
@@ -49,12 +53,10 @@ import {
 } from "./types";
 import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
-import Constants from "expo-constants";
 import { decode, encode } from "base-64";
 import { Platform } from "react-native";
 import {
   clearPersistedRefreshToken,
-  completePendingWebAuthSession,
   createSessionStorage,
   performRemoteLogout,
   persistRefreshToken,
@@ -70,10 +72,7 @@ if (typeof globalThis !== "undefined") {
   globalThis.atob = decode;
 }
 
-completePendingWebAuthSession(
-  Platform.OS,
-  typeof window !== "undefined" ? window : undefined,
-);
+maybeCompleteAuthSession();
 
 export type ErrorProps = {
   error: string;
@@ -142,7 +141,7 @@ export const KindeAuthProvider = ({
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const redirectUri = makeRedirectUri({ native: Constants.isDevice });
+  const redirectUri = makeRedirectUri();
 
   const [storage, setStorage] = useState<SessionManager>();
   const [isStorageReady, setIsStorageReady] = useState(false);
@@ -299,21 +298,23 @@ export const KindeAuthProvider = ({
         }
         await persistRefreshToken(storage, exchangeCodeResponse.refreshToken);
 
-        setRefreshTimer(exchangeCodeResponse.expiresIn || 60, async () => {
-          try {
-            await refreshToken({ domain, clientId, onRefresh });
-          } catch (error) {
-            callbacks?.onError?.(
-              {
-                error: "ERR_REFRESH",
-                errorDescription:
-                  error instanceof Error ? error.message : "Unknown error",
-              },
-              {},
-              contextValue,
-            );
-          }
-        });
+        if (exchangeCodeResponse.refreshToken) {
+          setRefreshTimer(exchangeCodeResponse.expiresIn || 60, async () => {
+            try {
+              await refreshToken({ domain, clientId, onRefresh });
+            } catch (error) {
+              callbacks?.onError?.(
+                {
+                  error: "ERR_REFRESH",
+                  errorDescription:
+                    error instanceof Error ? error.message : "Unknown error",
+                },
+                {},
+                contextValue,
+              );
+            }
+          });
+        }
         const user = await getUserProfile();
         if (user) {
           callbacks?.onSuccess?.(user, {}, contextValue);
