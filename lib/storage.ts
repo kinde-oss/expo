@@ -138,16 +138,14 @@ export const performRemoteLogout = async ({
   openAuthSession,
   revokeAccessToken,
 }: RemoteLogoutOptions): Promise<void> => {
-  if (revokeToken) {
-    if (accessToken && discovery) {
-      await revokeAccessToken(accessToken, discovery);
-    }
-    return;
-  }
-
   if (discovery?.endSessionEndpoint) {
     const logoutUrl = new URL(discovery.endSessionEndpoint);
     logoutUrl.searchParams.set("redirect", redirectUri);
     await openAuthSession(logoutUrl.toString());
+    return;
+  }
+
+  if (revokeToken && accessToken && discovery?.revocationEndpoint) {
+    await revokeAccessToken(accessToken, discovery);
   }
 };

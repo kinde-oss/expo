@@ -473,7 +473,11 @@ export const KindeAuthProvider = ({
         openAuthSession: async (url) => openAuthSessionAsync(url),
         revokeAccessToken: async (token, revokeDiscovery) => {
           await revokeAsync(
-            { token, tokenTypeHint: TokenTypeHint.AccessToken },
+            {
+              clientId,
+              token,
+              tokenTypeHint: TokenTypeHint.AccessToken,
+            },
             revokeDiscovery,
           );
         },

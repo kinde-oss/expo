@@ -304,18 +304,41 @@ describe("storage helpers", () => {
       revokeAccessToken,
     });
 
+    const logoutUrl = new URL(openAuthSession.mock.calls[0][0]);
+
+    expect(logoutUrl.origin + logoutUrl.pathname).toBe(
+      "https://example.kinde.com/logout",
+    );
+    expect(logoutUrl.searchParams.get("redirect")).toBe("myapp://callback");
+    expect(revokeAccessToken).not.toHaveBeenCalled();
+  });
+
+  it("falls back to revoking the access token when revokeToken is requested and no logout endpoint exists", async () => {
+    const openAuthSession = vi.fn(async () => undefined);
+    const revokeAccessToken = vi.fn(async () => undefined);
+
+    await performRemoteLogout({
+      accessToken: "access-token",
+      discovery: {
+        revocationEndpoint: "https://example.kinde.com/revoke",
+      },
+      redirectUri: "myapp://callback",
+      revokeToken: true,
+      openAuthSession,
+      revokeAccessToken,
+    });
+
     expect(revokeAccessToken).toHaveBeenCalledOnce();
     expect(openAuthSession).not.toHaveBeenCalled();
   });
 
-  it("skips remote revoke when revokeToken is requested but no access token exists", async () => {
+  it("skips remote revoke when revokeToken is requested but no access token exists and no logout endpoint exists", async () => {
     const openAuthSession = vi.fn(async () => undefined);
     const revokeAccessToken = vi.fn(async () => undefined);
 
     await performRemoteLogout({
       accessToken: null,
       discovery: {
-        endSessionEndpoint: "https://example.kinde.com/logout",
         revocationEndpoint: "https://example.kinde.com/revoke",
       },
       redirectUri: "myapp://callback",

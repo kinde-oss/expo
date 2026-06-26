@@ -11,8 +11,10 @@ const mocked = vi.hoisted(() => ({
   getUserProfile: vi.fn(async () => null),
   makeRedirectUri: vi.fn(() => "kinde://redirect"),
   maybeCompleteAuthSession: vi.fn(),
+  openAuthSessionAsync: vi.fn(async () => undefined),
   removeSessionItem: vi.fn(async () => undefined),
   refreshToken: vi.fn(async () => ({ success: false })),
+  revokeAsync: vi.fn(async () => true),
   setInsecureStorage: vi.fn(),
   setRefreshTimer: vi.fn(),
   storageSettings: { useInsecureForRefreshToken: false },
@@ -46,7 +48,7 @@ vi.mock("expo-auth-session", () => ({
   },
   exchangeCodeAsync: mocked.exchangeCodeAsync,
   makeRedirectUri: mocked.makeRedirectUri,
-  revokeAsync: vi.fn(),
+  revokeAsync: mocked.revokeAsync,
   TokenTypeHint: {
     AccessToken: "access_token",
     RefreshToken: "refresh_token",
@@ -55,7 +57,7 @@ vi.mock("expo-auth-session", () => ({
 
 vi.mock("expo-web-browser", () => ({
   maybeCompleteAuthSession: mocked.maybeCompleteAuthSession,
-  openAuthSessionAsync: vi.fn(),
+  openAuthSessionAsync: mocked.openAuthSessionAsync,
   openBrowserAsync: vi.fn(),
 }));
 
@@ -230,5 +232,48 @@ describe("KindeAuthProvider Expo SDK 56 migration", () => {
     );
     expect(storage.removeSessionItem).toHaveBeenCalledWith("refresh_token");
     expect(mocked.setRefreshTimer).not.toHaveBeenCalled();
+  });
+
+  it("prioritizes Kinde hosted logout when revokeToken is requested", async () => {
+    const storage = {
+      getSessionItem: vi.fn(async (key: string) =>
+        key === "access_token" ? "access-token" : null,
+      ),
+      removeSessionItem: vi.fn(async () => undefined),
+      removeItems: vi.fn(async () => undefined),
+      setSessionItem: vi.fn(async () => undefined),
+    };
+
+    configureProviderState(storage);
+
+    const { KindeAuthProvider } = await import("./KindeAuthProvider");
+    const providerElement = KindeAuthProvider({
+      callbacks: undefined,
+      children: null,
+      config: {
+        clientId: "client-id",
+        domain: "https://example.kinde.com",
+      },
+    });
+
+    const logout = (
+      providerElement as {
+        props: {
+          value: {
+            logout: (args?: unknown) => Promise<unknown>;
+          };
+        };
+      }
+    ).props.value.logout;
+
+    await logout({ revokeToken: true });
+
+    const logoutUrl = new URL(mocked.openAuthSessionAsync.mock.calls[0][0]);
+
+    expect(logoutUrl.origin + logoutUrl.pathname).toBe(
+      "https://example.kinde.com/logout",
+    );
+    expect(logoutUrl.searchParams.get("redirect")).toBe("kinde://redirect");
+    expect(mocked.revokeAsync).not.toHaveBeenCalled();
   });
 });
