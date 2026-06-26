@@ -14,7 +14,6 @@ const mocked = vi.hoisted(() => ({
   openAuthSessionAsync: vi.fn(async () => undefined),
   removeSessionItem: vi.fn(async () => undefined),
   refreshToken: vi.fn(async () => ({ success: false })),
-  revokeAsync: vi.fn(async () => true),
   setInsecureStorage: vi.fn(),
   setRefreshTimer: vi.fn(),
   storageSettings: { useInsecureForRefreshToken: false },
@@ -48,11 +47,6 @@ vi.mock("expo-auth-session", () => ({
   },
   exchangeCodeAsync: mocked.exchangeCodeAsync,
   makeRedirectUri: mocked.makeRedirectUri,
-  revokeAsync: mocked.revokeAsync,
-  TokenTypeHint: {
-    AccessToken: "access_token",
-    RefreshToken: "refresh_token",
-  },
 }));
 
 vi.mock("expo-web-browser", () => ({
@@ -274,6 +268,9 @@ describe("KindeAuthProvider Expo SDK 56 migration", () => {
       "https://example.kinde.com/logout",
     );
     expect(logoutUrl.searchParams.get("redirect")).toBe("kinde://redirect");
-    expect(mocked.revokeAsync).not.toHaveBeenCalled();
+    expect(mocked.openAuthSessionAsync).toHaveBeenCalledWith(
+      expect.any(String),
+      "kinde://redirect",
+    );
   });
 });

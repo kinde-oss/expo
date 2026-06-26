@@ -26,18 +26,9 @@ type StorageFactoryOptions = {
 };
 
 type RemoteLogoutOptions = {
-  accessToken: string | null;
-  discovery: Pick<
-    DiscoveryDocument,
-    "endSessionEndpoint" | "revocationEndpoint"
-  > | null;
+  discovery: Pick<DiscoveryDocument, "endSessionEndpoint"> | null;
   redirectUri: string;
-  revokeToken?: boolean;
-  openAuthSession: (url: string) => Promise<unknown>;
-  revokeAccessToken: (
-    token: string,
-    discovery: Pick<DiscoveryDocument, "revocationEndpoint">,
-  ) => Promise<unknown>;
+  openAuthSession: (url: string, redirectUri: string) => Promise<unknown>;
 };
 
 const STORAGE_TEST_KEY = "__kinde_storage_test__";
@@ -131,21 +122,13 @@ export const clearPersistedRefreshToken = async (
 };
 
 export const performRemoteLogout = async ({
-  accessToken,
   discovery,
   redirectUri,
-  revokeToken,
   openAuthSession,
-  revokeAccessToken,
 }: RemoteLogoutOptions): Promise<void> => {
   if (discovery?.endSessionEndpoint) {
     const logoutUrl = new URL(discovery.endSessionEndpoint);
     logoutUrl.searchParams.set("redirect", redirectUri);
-    await openAuthSession(logoutUrl.toString());
-    return;
-  }
-
-  if (revokeToken && accessToken && discovery?.revocationEndpoint) {
-    await revokeAccessToken(accessToken, discovery);
+    await openAuthSession(logoutUrl.toString(), redirectUri);
   }
 };

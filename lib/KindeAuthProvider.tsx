@@ -28,8 +28,6 @@ import {
   DiscoveryDocument,
   exchangeCodeAsync,
   makeRedirectUri,
-  revokeAsync,
-  TokenTypeHint,
 } from "expo-auth-session";
 import { openAuthSessionAsync, openBrowserAsync } from "expo-web-browser";
 import {
@@ -444,7 +442,7 @@ export const KindeAuthProvider = ({
    * @returns {Promise<LogoutResult>}
    */
   async function logout({
-    revokeToken,
+    revokeToken: _revokeToken,
   }: Partial<LogoutRequest> = {}): Promise<LogoutResult> {
     if (!storage) {
       return Promise.resolve({
@@ -458,29 +456,14 @@ export const KindeAuthProvider = ({
       setIsAuthenticated(false);
     };
 
-    const accessToken = (await storage.getSessionItem(
-      StorageKeys.accessToken,
-    )) as string | null;
-
     let success = true;
 
     try {
       await performRemoteLogout({
-        accessToken,
         discovery,
         redirectUri,
-        revokeToken,
-        openAuthSession: async (url) => openAuthSessionAsync(url),
-        revokeAccessToken: async (token, revokeDiscovery) => {
-          await revokeAsync(
-            {
-              clientId,
-              token,
-              tokenTypeHint: TokenTypeHint.AccessToken,
-            },
-            revokeDiscovery,
-          );
-        },
+        openAuthSession: async (url, authRedirectUri) =>
+          openAuthSessionAsync(url, authRedirectUri),
       });
     } catch (err: unknown) {
       console.error(err);
