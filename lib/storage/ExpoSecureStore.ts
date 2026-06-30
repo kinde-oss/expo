@@ -36,26 +36,25 @@ export class ExpoSecureStore<
     itemKey: V | StorageKeys,
     itemValue: unknown,
   ): Promise<void> {
-    await this.removeSessionItem(itemKey);
-
-    if (typeof itemValue === "string") {
-      const chunks = splitString(
-        itemValue,
-        Math.min(storageSettings.maxLength, 2048),
-      );
-      await Promise.all(
-        chunks.map((splitValue, index) =>
-          SecureStore.setItemAsync(
-            `${storageSettings.keyPrefix}${itemKey}${index}`,
-            splitValue,
-          ),
-        ),
-      );
-      this.notifyListeners();
-      return;
-    } else {
+    if (typeof itemValue !== "string") {
       throw new Error("Item value must be a string");
     }
+
+    await this.removeSessionItem(itemKey);
+
+    const chunks = splitString(
+      itemValue,
+      Math.min(storageSettings.maxLength, 2048),
+    );
+    await Promise.all(
+      chunks.map((splitValue, index) =>
+        SecureStore.setItemAsync(
+          `${storageSettings.keyPrefix}${itemKey}${index}`,
+          splitValue,
+        ),
+      ),
+    );
+    this.notifyListeners();
   }
 
   /**
