@@ -13,6 +13,7 @@ import {
   RefreshType,
   generatePortalUrl,
   PortalPage,
+  OrgCode,
 } from "@kinde/js-utils";
 import {
   ExpoSecureStore,
@@ -359,6 +360,19 @@ export const KindeAuthProvider = ({
     return response;
   };
 
+  const switchOrg = async (
+    orgCode: OrgCode,
+    options: Partial<LoginMethodParams> = {},
+  ): Promise<LoginResponse> => {
+    const response = await authenticate({
+      orgCode: orgCode,
+      ...options,
+      prompt: PromptTypes.none,
+    });
+    
+    return response
+  };
+
   /**
    * Login method
    * @param {Partial<LoginMethodParams>} subNav
@@ -569,7 +583,7 @@ export const KindeAuthProvider = ({
       logout,
       register,
       portal,
-
+      switchOrg,
       getAccessToken,
       getIdToken,
       getDecodedToken,
