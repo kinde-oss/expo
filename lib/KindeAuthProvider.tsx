@@ -15,7 +15,6 @@ import {
   PortalPage,
 } from "@kinde/js-utils";
 import {
-  ExpoSecureStore,
   mapLoginMethodParamsForUrl,
   PromptTypes,
   setActiveStorage,
@@ -23,6 +22,7 @@ import {
   setRefreshTimer,
   refreshToken,
 } from "@kinde/js-utils";
+import { ExpoSecureStore } from "./storage/ExpoSecureStore";
 import { validateToken } from "@kinde/jwt-validator";
 import {
   AuthRequest,
@@ -143,8 +143,7 @@ export const KindeAuthProvider = ({
   useEffect(() => {
     const initializeStorage = async () => {
       try {
-        const ExpoStore = await ExpoSecureStore.default();
-        const storageInstance = new ExpoStore();
+        const storageInstance = new ExpoSecureStore();
         setActiveStorage(storageInstance);
         setStorage(storageInstance);
         setIsStorageReady(true);

@@ -67,21 +67,21 @@ vi.mock("base-64", () => ({
   encode: vi.fn((value: string) => value),
 }));
 
+vi.mock("./storage/ExpoSecureStore", () => ({
+  ExpoSecureStore: vi.fn(
+    class {
+      async getSessionItem() {
+        return null;
+      }
+
+      async removeItems() {}
+
+      async setSessionItem() {}
+    },
+  ),
+}));
+
 vi.mock("@kinde/js-utils", () => ({
-  ExpoSecureStore: {
-    default: vi.fn(
-      async () =>
-        class {
-          async getSessionItem() {
-            return null;
-          }
-
-          async removeItems() {}
-
-          async setSessionItem() {}
-        },
-    ),
-  },
   PortalPage: {
     profile: "profile",
   },
