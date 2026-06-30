@@ -73,14 +73,24 @@ describe("ExpoSecureStore", () => {
     }
   });
 
-  it("throws when item value is not a string", async () => {
+  it("throws when item value is not a string without removing existing data", async () => {
     const store = new ExpoSecureStore();
+    const token = "existing-token";
 
-    mockedSecureStore.getItemAsync.mockResolvedValue(null);
+    mockedSecureStore.getItemAsync.mockResolvedValueOnce(null);
+    mockedSecureStore.getItemAsync.mockResolvedValueOnce(token);
+    mockedSecureStore.getItemAsync.mockResolvedValueOnce(null);
+
+    await store.setSessionItem(StorageKeys.accessToken, token);
+
+    vi.clearAllMocks();
 
     await expect(
       store.setSessionItem(StorageKeys.accessToken, 123),
     ).rejects.toThrow("Item value must be a string");
+
+    expect(mockedSecureStore.deleteItemAsync).not.toHaveBeenCalled();
+    expect(mockedSecureStore.setItemAsync).not.toHaveBeenCalled();
   });
 
   it("chunks long strings into multiple setItemAsync calls with indexed keys", async () => {
