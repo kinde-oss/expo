@@ -366,8 +366,8 @@ export const KindeAuthProvider = ({
     options: Partial<LoginMethodParams> = {},
   ): Promise<LoginResponse> => {
     const response = await authenticate({
-      orgCode: orgCode,
       ...options,
+      orgCode: orgCode,
       prompt: PromptTypes.none,
     });
 
