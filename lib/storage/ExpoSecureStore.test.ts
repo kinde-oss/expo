@@ -10,11 +10,7 @@ vi.mock("expo-secure-store", () => ({
 
 import * as SecureStore from "expo-secure-store";
 
-const mockedSecureStore = SecureStore as {
-  setItemAsync: ReturnType<typeof vi.fn>;
-  getItemAsync: ReturnType<typeof vi.fn>;
-  deleteItemAsync: ReturnType<typeof vi.fn>;
-};
+const mockedSecureStore = vi.mocked(SecureStore);
 
 describe("ExpoSecureStore", () => {
   beforeEach(() => {
