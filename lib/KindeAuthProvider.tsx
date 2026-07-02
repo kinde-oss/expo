@@ -73,6 +73,7 @@ enum AuthEvent {
   login = "login",
   logout = "logout",
   register = "register",
+  switchOrg = "switchOrg",
   tokenRefreshed = "tokenRefreshed",
 }
 
@@ -369,8 +370,9 @@ export const KindeAuthProvider = ({
       ...options,
       prompt: PromptTypes.none,
     });
-    
-    return response
+
+    await handleLoginResponse(response, AuthEvent.switchOrg);
+    return response;
   };
 
   /**
