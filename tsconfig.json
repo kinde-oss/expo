@@ -18,10 +18,7 @@
     "declaration": true,
     "outDir": "./dist",
     "emitDeclarationOnly": true,
-    "noEmit": false,
-    "paths": {
-      "@kinde/js-utils": ["./node_modules/@kinde/js-utils/dist/lib/main.d.ts"]
-    }
+    "noEmit": false
   },
   "include": ["lib"],
   "extends": "expo/tsconfig.base"

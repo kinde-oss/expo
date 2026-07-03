@@ -82,6 +82,14 @@ enum AuthEvent {
   tokenRefreshed = "tokenRefreshed",
 }
 
+const SWITCH_ORG_SILENT_AUTH_TIMEOUT_MS = 30_000;
+const SWITCH_ORG_SILENT_AUTH_TIMEOUT_MESSAGE =
+  "Organization switch timed out waiting for silent authentication. Your identity provider session may be stale.";
+
+type AuthenticateOptions = Partial<LoginMethodParams> & {
+  authTimeoutMs?: number;
+};
+
 type EventTypes = {
   (
     event: AuthEvent.tokenRefreshed,
@@ -187,9 +195,10 @@ export const KindeAuthProvider = ({
   };
 
   const authenticate = async (
-    options: Partial<LoginMethodParams> = {},
+    options: AuthenticateOptions = {},
   ): Promise<LoginResponse> => {
-    const authRedirectUri = options.redirectURL || redirectUri;
+    const { authTimeoutMs, ...loginOptions } = options;
+    const authRedirectUri = loginOptions.redirectURL || redirectUri;
     if (!authRedirectUri) {
       return {
         success: false,
@@ -209,13 +218,13 @@ export const KindeAuthProvider = ({
       redirectUri: authRedirectUri,
       scopes: scopes,
       extraParams: {
-        ...mapLoginMethodParamsForUrl(options),
+        ...mapLoginMethodParamsForUrl(loginOptions),
         has_success_page: "true",
       },
     });
 
     try {
-      const codeResponse = await request.promptAsync(
+      const promptAsync = request.promptAsync(
         {
           authorizationEndpoint: `${domain}/oauth2/auth`,
         } as DiscoveryDocument,
@@ -223,6 +232,17 @@ export const KindeAuthProvider = ({
           showInRecents: true,
         },
       );
+      const codeResponse = authTimeoutMs
+        ? await Promise.race([
+            promptAsync,
+            new Promise<never>((_, reject) => {
+              setTimeout(
+                () => reject(new Error(SWITCH_ORG_SILENT_AUTH_TIMEOUT_MESSAGE)),
+                authTimeoutMs,
+              );
+            }),
+          ])
+        : await promptAsync;
       if (request && codeResponse?.type === "success") {
         const exchangeCodeResponse = await exchangeCodeAsync(
           {
@@ -372,11 +392,23 @@ export const KindeAuthProvider = ({
     orgCode: OrgCode,
     options: Partial<LoginMethodParams> = {},
   ): Promise<LoginResponse> => {
-    const response = await authenticate({
+    let response = await authenticate({
       ...options,
       orgCode: orgCode,
       prompt: PromptTypes.none,
+      authTimeoutMs: SWITCH_ORG_SILENT_AUTH_TIMEOUT_MS,
     });
+
+    if (
+      !response.success &&
+      response.errorMessage === SWITCH_ORG_SILENT_AUTH_TIMEOUT_MESSAGE
+    ) {
+      response = await authenticate({
+        orgCode: orgCode,
+        ...options,
+        prompt: PromptTypes.login,
+      });
+    }
 
     await handleLoginResponse(response, AuthEvent.switchOrg);
     return response;
