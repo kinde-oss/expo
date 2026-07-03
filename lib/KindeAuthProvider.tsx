@@ -86,8 +86,11 @@ const SWITCH_ORG_SILENT_AUTH_TIMEOUT_MS = 30_000;
 const SWITCH_ORG_SILENT_AUTH_TIMEOUT_MESSAGE =
   "Organization switch timed out waiting for silent authentication. Your identity provider session may be stale.";
 
+type SwitchOrgOptions = NonNullable<Parameters<KindeAuthHook["switchOrg"]>[1]>;
+
 type AuthenticateOptions = Partial<LoginMethodParams> & {
   authTimeoutMs?: number;
+  suppressCallbacks?: boolean;
 };
 
 type EventTypes = {
@@ -197,7 +200,7 @@ export const KindeAuthProvider = ({
   const authenticate = async (
     options: AuthenticateOptions = {},
   ): Promise<LoginResponse> => {
-    const { authTimeoutMs, ...loginOptions } = options;
+    const { authTimeoutMs, suppressCallbacks, ...loginOptions } = options;
     const authRedirectUri = loginOptions.redirectURL || redirectUri;
     if (!authRedirectUri) {
       return {
@@ -333,7 +336,7 @@ export const KindeAuthProvider = ({
           });
         }
         const user = await getUserProfile();
-        if (user) {
+        if (user && !suppressCallbacks) {
           callbacks?.onSuccess?.(user, {}, contextValue);
         }
 
@@ -343,14 +346,16 @@ export const KindeAuthProvider = ({
           idToken: exchangeCodeResponse.idToken!,
         };
       }
-      callbacks?.onError?.(
-        {
-          error: "ERR_CODE_EXCHANGE",
-          errorDescription: "Unknown Error",
-        },
-        {},
-        contextValue,
-      );
+      if (!suppressCallbacks) {
+        callbacks?.onError?.(
+          {
+            error: "ERR_CODE_EXCHANGE",
+            errorDescription: "Unknown Error",
+          },
+          {},
+          contextValue,
+        );
+      }
       return {
         success: false,
         errorMessage: "Unknown error",
@@ -360,14 +365,16 @@ export const KindeAuthProvider = ({
       const errorDescription =
         err instanceof Error ? err.message : "Unknown error";
 
-      callbacks?.onError?.(
-        {
-          error: "ERR_CODE_EXCHANGE",
-          errorDescription,
-        },
-        {},
-        contextValue,
-      );
+      if (!suppressCallbacks) {
+        callbacks?.onError?.(
+          {
+            error: "ERR_CODE_EXCHANGE",
+            errorDescription,
+          },
+          {},
+          contextValue,
+        );
+      }
       return { success: false, errorMessage: errorDescription };
     }
   };
@@ -390,13 +397,14 @@ export const KindeAuthProvider = ({
 
   const switchOrg = async (
     orgCode: OrgCode,
-    options: Partial<LoginMethodParams> = {},
+    options: SwitchOrgOptions = {},
   ): Promise<LoginResponse> => {
     let response = await authenticate({
       ...options,
       orgCode: orgCode,
       prompt: PromptTypes.none,
       authTimeoutMs: SWITCH_ORG_SILENT_AUTH_TIMEOUT_MS,
+      suppressCallbacks: true,
     });
 
     if (
@@ -712,6 +720,7 @@ export const KindeAuthProvider = ({
     logout,
     register,
     portal,
+    switchOrg,
     isStorageReady,
     storage,
     isAuthenticated,
