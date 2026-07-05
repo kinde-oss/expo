@@ -15,7 +15,6 @@ import {
   PortalPage,
 } from "@kinde/js-utils";
 import {
-  ExpoSecureStore,
   mapLoginMethodParamsForUrl,
   PromptTypes,
   setActiveStorage,
@@ -29,14 +28,8 @@ import {
   DiscoveryDocument,
   exchangeCodeAsync,
   makeRedirectUri,
-  revokeAsync,
-  TokenTypeHint,
 } from "expo-auth-session";
-import {
-  maybeCompleteAuthSession,
-  openAuthSessionAsync,
-  openBrowserAsync,
-} from "expo-web-browser";
+import { openAuthSessionAsync, openBrowserAsync } from "expo-web-browser";
 import {
   createContext,
   useEffect,
@@ -55,6 +48,14 @@ import {
 import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 import { decode, encode } from "base-64";
+import { Platform } from "react-native";
+import {
+  clearPersistedRefreshToken,
+  completePendingWebAuthSession,
+  createSessionStorage,
+  performRemoteLogout,
+  persistRefreshToken,
+} from "./storage";
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
 );
@@ -66,7 +67,10 @@ if (typeof globalThis !== "undefined") {
   globalThis.atob = decode;
 }
 
-maybeCompleteAuthSession();
+completePendingWebAuthSession(
+  Platform.OS,
+  typeof window !== "undefined" ? window : undefined,
+);
 
 export type ErrorProps = {
   error: string;
@@ -143,8 +147,10 @@ export const KindeAuthProvider = ({
   useEffect(() => {
     const initializeStorage = async () => {
       try {
-        const ExpoStore = await ExpoSecureStore.default();
-        const storageInstance = new ExpoStore();
+        const storageInstance = await createSessionStorage({
+          platformOS: Platform.OS,
+          windowObject: typeof window !== "undefined" ? window : undefined,
+        });
         setActiveStorage(storageInstance);
         setStorage(storageInstance);
         setIsStorageReady(true);
@@ -191,7 +197,8 @@ export const KindeAuthProvider = ({
     if (!authRedirectUri) {
       return {
         success: false,
-        errorMessage: "This library only works on a mobile device",
+        errorMessage:
+          "A valid redirect URL is required for the current platform.",
       };
     }
 
@@ -287,13 +294,9 @@ export const KindeAuthProvider = ({
             setIsAuthenticated(true);
           }
         }
+        await persistRefreshToken(storage, exchangeCodeResponse.refreshToken);
 
         if (exchangeCodeResponse.refreshToken) {
-          await storage.setSessionItem(
-            StorageKeys.refreshToken,
-            exchangeCodeResponse.refreshToken,
-          );
-
           setRefreshTimer(exchangeCodeResponse.expiresIn || 60, async () => {
             try {
               await refreshToken({ domain, clientId, onRefresh });
@@ -439,7 +442,7 @@ export const KindeAuthProvider = ({
    * @returns {Promise<LogoutResult>}
    */
   async function logout({
-    revokeToken,
+    revokeToken: _revokeToken,
   }: Partial<LogoutRequest> = {}): Promise<LogoutResult> {
     if (!storage) {
       return Promise.resolve({
@@ -447,43 +450,34 @@ export const KindeAuthProvider = ({
       });
     }
     const cleanup = async () => {
-      await storage.removeItems(
-        StorageKeys.accessToken,
-        StorageKeys.idToken,
-        StorageKeys.refreshToken,
-      );
+      await storage.removeItems(StorageKeys.accessToken, StorageKeys.idToken);
+      await clearPersistedRefreshToken(storage);
       callbacks?.onEvent?.(AuthEvent.logout, {}, contextValue);
       setIsAuthenticated(false);
     };
 
-    return new Promise(async (resolve) => {
-      const accesstoken = (await storage.getSessionItem(
-        StorageKeys.accessToken,
-      )) as string;
-      if (accesstoken && discovery) {
-        if (revokeToken) {
-          revokeAsync(
-            { token: accesstoken!, tokenTypeHint: TokenTypeHint.AccessToken },
-            discovery,
-          )
-            .then(async () => {
-              await cleanup();
-              resolve({ success: true });
-            })
-            .catch((err: unknown) => {
-              console.error(err);
-              resolve({ success: false });
-            });
-        } else {
-          await openAuthSessionAsync(
-            `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`,
-          );
-          await cleanup();
-          resolve({ success: true });
-        }
-      }
-      resolve({ success: true });
-    });
+    let success = true;
+
+    try {
+      await performRemoteLogout({
+        discovery,
+        redirectUri,
+        openAuthSession: async (url, authRedirectUri) =>
+          openAuthSessionAsync(url, authRedirectUri),
+      });
+    } catch (err: unknown) {
+      console.error(err);
+      success = false;
+    }
+
+    try {
+      await cleanup();
+    } catch (err: unknown) {
+      console.error(err);
+      success = false;
+    }
+
+    return { success };
   }
 
   /**
