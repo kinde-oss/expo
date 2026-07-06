@@ -1,5 +1,5 @@
 import * as React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocked = vi.hoisted(() => ({
   exchangeCodeAsync: vi.fn(async () => ({
@@ -8,11 +8,20 @@ const mocked = vi.hoisted(() => ({
   })),
   getUserProfile: vi.fn(async () => null),
   makeRedirectUri: vi.fn(() => "kinde://redirect"),
+  mapLoginMethodParamsForUrl: vi.fn(() => ({})),
   maybeCompleteAuthSession: vi.fn(),
+  promptAsync: vi.fn(async () => ({
+    type: "success" as const,
+    params: { code: "authorization-code" },
+  })),
   refreshToken: vi.fn(async () => ({ success: false })),
   setRefreshTimer: vi.fn(),
   validateToken: vi.fn(async () => ({ valid: true })),
 }));
+
+const SWITCH_ORG_SILENT_AUTH_TIMEOUT_MS = 30_000;
+const SWITCH_ORG_SILENT_AUTH_TIMEOUT_MESSAGE =
+  "Organization switch timed out waiting for silent authentication. Your identity provider session may be stale.";
 
 vi.mock("react", async () => {
   const actual = await vi.importActual<typeof import("react")>("react");
@@ -32,11 +41,8 @@ vi.mock("expo-auth-session", () => ({
 
     constructor(_config: unknown) {}
 
-    async promptAsync() {
-      return {
-        type: "success" as const,
-        params: { code: "authorization-code" },
-      };
+    async promptAsync(...args: unknown[]) {
+      return mocked.promptAsync(...args);
     }
   },
   exchangeCodeAsync: mocked.exchangeCodeAsync,
@@ -88,6 +94,7 @@ vi.mock("@kinde/js-utils", () => ({
   PromptTypes: {
     create: "create",
     login: "login",
+    none: "none",
   },
   RefreshType: {
     cookie: 1,
@@ -108,7 +115,7 @@ vi.mock("@kinde/js-utils", () => ({
   getRoles: vi.fn(),
   getUserOrganizations: vi.fn(),
   getUserProfile: mocked.getUserProfile,
-  mapLoginMethodParamsForUrl: vi.fn(() => ({})),
+  mapLoginMethodParamsForUrl: mocked.mapLoginMethodParamsForUrl,
   refreshToken: mocked.refreshToken,
   setActiveStorage: vi.fn(),
   setRefreshTimer: mocked.setRefreshTimer,
@@ -127,6 +134,55 @@ const configureProviderState = (storage: {
     .mockImplementationOnce(() => [true, vi.fn()])
     .mockImplementationOnce(() => [storage, vi.fn()])
     .mockImplementationOnce(() => [true, vi.fn()]);
+};
+
+const mockUser = {
+  id: "user-1",
+  email: "test@example.com",
+};
+
+const createStorage = () => ({
+  getSessionItem: vi.fn(async () => null),
+  removeItems: vi.fn(async () => undefined),
+  setSessionItem: vi.fn(async () => undefined),
+});
+
+const createProvider = async (
+  callbacks?: {
+    onError?: ReturnType<typeof vi.fn>;
+    onEvent?: ReturnType<typeof vi.fn>;
+    onSuccess?: ReturnType<typeof vi.fn>;
+  },
+) => {
+  const storage = createStorage();
+
+  configureProviderState(storage);
+
+  const { KindeAuthProvider } = await import("./KindeAuthProvider");
+  const providerElement = KindeAuthProvider({
+    callbacks,
+    children: null,
+    config: {
+      clientId: "client-id",
+      domain: "https://example.kinde.com",
+    },
+  });
+
+  return {
+    storage,
+    switchOrg: (
+      providerElement as {
+        props: {
+          value: {
+            switchOrg: (
+              orgCode: string,
+              options?: { redirectURL?: string },
+            ) => Promise<unknown>;
+          };
+        };
+      }
+    ).props.value.switchOrg,
+  };
 };
 
 describe("KindeAuthProvider Expo SDK 56 migration", () => {
@@ -166,11 +222,7 @@ describe("KindeAuthProvider Expo SDK 56 migration", () => {
   });
 
   it("does not schedule token refreshes when the code exchange omits a refresh token", async () => {
-    const storage = {
-      getSessionItem: vi.fn(async () => null),
-      removeItems: vi.fn(async () => undefined),
-      setSessionItem: vi.fn(async () => undefined),
-    };
+    const storage = createStorage();
 
     configureProviderState(storage);
 
@@ -198,5 +250,159 @@ describe("KindeAuthProvider Expo SDK 56 migration", () => {
       expect.anything(),
     );
     expect(mocked.setRefreshTimer).not.toHaveBeenCalled();
+  });
+});
+
+describe("KindeAuthProvider switchOrg", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+    mocked.getUserProfile.mockResolvedValue(mockUser);
+    mocked.promptAsync.mockResolvedValue({
+      type: "success",
+      params: { code: "authorization-code" },
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("completes silently when prompt none succeeds", async () => {
+    const onSuccess = vi.fn();
+    const onEvent = vi.fn();
+    const onError = vi.fn();
+    const { switchOrg } = await createProvider({
+      onError,
+      onEvent,
+      onSuccess,
+    });
+
+    const result = await switchOrg("org_abc");
+
+    expect(result).toEqual({
+      success: true,
+      accessToken: "access-token",
+      idToken: "id-token",
+    });
+    expect(mocked.promptAsync).toHaveBeenCalledTimes(1);
+    expect(mocked.mapLoginMethodParamsForUrl).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orgCode: "org_abc",
+        prompt: "none",
+      }),
+    );
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenCalledWith(
+      mockUser,
+      {},
+      expect.objectContaining({ switchOrg: expect.any(Function) }),
+    );
+    expect(onEvent).toHaveBeenCalledTimes(1);
+    expect(onEvent).toHaveBeenCalledWith(
+      "switchOrg",
+      expect.objectContaining({ success: true }),
+      expect.objectContaining({ switchOrg: expect.any(Function) }),
+    );
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("falls back to interactive login after silent timeout and fires callbacks once", async () => {
+    vi.useFakeTimers();
+    const onSuccess = vi.fn();
+    const onEvent = vi.fn();
+    const onError = vi.fn();
+
+    mocked.promptAsync.mockImplementationOnce(() => new Promise(() => {}));
+    mocked.promptAsync.mockResolvedValueOnce({
+      type: "success",
+      params: { code: "authorization-code" },
+    });
+
+    const { switchOrg } = await createProvider({
+      onError,
+      onEvent,
+      onSuccess,
+    });
+    const switchOrgPromise = switchOrg("org_abc");
+
+    await vi.advanceTimersByTimeAsync(SWITCH_ORG_SILENT_AUTH_TIMEOUT_MS);
+    const result = await switchOrgPromise;
+
+    expect(result).toEqual({
+      success: true,
+      accessToken: "access-token",
+      idToken: "id-token",
+    });
+    expect(mocked.promptAsync).toHaveBeenCalledTimes(2);
+    expect(mocked.mapLoginMethodParamsForUrl).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        orgCode: "org_abc",
+        prompt: "none",
+      }),
+    );
+    expect(mocked.mapLoginMethodParamsForUrl).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        orgCode: "org_abc",
+        prompt: "login",
+      }),
+    );
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onEvent).toHaveBeenCalledTimes(1);
+    expect(onEvent).toHaveBeenCalledWith(
+      "switchOrg",
+      expect.objectContaining({ success: true }),
+      expect.anything(),
+    );
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("reports error when interactive fallback fails after silent timeout", async () => {
+    vi.useFakeTimers();
+    const onSuccess = vi.fn();
+    const onEvent = vi.fn();
+    const onError = vi.fn();
+
+    mocked.promptAsync.mockImplementationOnce(() => new Promise(() => {}));
+    mocked.promptAsync.mockResolvedValueOnce({
+      type: "cancel",
+      params: {},
+    });
+
+    const { switchOrg } = await createProvider({
+      onError,
+      onEvent,
+      onSuccess,
+    });
+    const switchOrgPromise = switchOrg("org_abc");
+
+    await vi.advanceTimersByTimeAsync(SWITCH_ORG_SILENT_AUTH_TIMEOUT_MS);
+    const result = await switchOrgPromise;
+
+    expect(result).toEqual({
+      success: false,
+      errorMessage: "Unknown error",
+    });
+    expect(mocked.promptAsync).toHaveBeenCalledTimes(2);
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(onEvent).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalledWith(
+      {
+        error: "ERR_LOGIN",
+        errorDescription: "Unknown error",
+      },
+      {},
+      expect.objectContaining({ switchOrg: expect.any(Function) }),
+    );
+    expect(onError).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        errorDescription: SWITCH_ORG_SILENT_AUTH_TIMEOUT_MESSAGE,
+      }),
+      expect.anything(),
+      expect.anything(),
+    );
   });
 });

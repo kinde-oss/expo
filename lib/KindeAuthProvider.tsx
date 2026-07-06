@@ -412,9 +412,10 @@ export const KindeAuthProvider = ({
       response.errorMessage === SWITCH_ORG_SILENT_AUTH_TIMEOUT_MESSAGE
     ) {
       response = await authenticate({
-        orgCode: orgCode,
         ...options,
+        orgCode: orgCode,
         prompt: PromptTypes.login,
+        suppressCallbacks: true,
       });
     }
 
