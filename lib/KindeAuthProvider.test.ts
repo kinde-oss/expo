@@ -2,10 +2,12 @@ import * as React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocked = vi.hoisted(() => ({
+  clearInsecureStorage: vi.fn(),
   exchangeCodeAsync: vi.fn(async () => ({
     accessToken: "access-token",
     idToken: "id-token",
   })),
+  getInsecureStorage: vi.fn(() => null),
   getUserProfile: vi.fn(async () => null),
   makeRedirectUri: vi.fn(() => "kinde://redirect"),
   mapLoginMethodParamsForUrl: vi.fn(() => ({})),
@@ -14,8 +16,12 @@ const mocked = vi.hoisted(() => ({
     type: "success" as const,
     params: { code: "authorization-code" },
   })),
+  openAuthSessionAsync: vi.fn(async () => undefined),
+  removeSessionItem: vi.fn(async () => undefined),
   refreshToken: vi.fn(async () => ({ success: false })),
+  setInsecureStorage: vi.fn(),
   setRefreshTimer: vi.fn(),
+  storageSettings: { useInsecureForRefreshToken: false },
   validateToken: vi.fn(async () => ({ valid: true })),
 }));
 
@@ -47,17 +53,18 @@ vi.mock("expo-auth-session", () => ({
   },
   exchangeCodeAsync: mocked.exchangeCodeAsync,
   makeRedirectUri: mocked.makeRedirectUri,
-  revokeAsync: vi.fn(),
-  TokenTypeHint: {
-    AccessToken: "access_token",
-    RefreshToken: "refresh_token",
-  },
 }));
 
 vi.mock("expo-web-browser", () => ({
   maybeCompleteAuthSession: mocked.maybeCompleteAuthSession,
-  openAuthSessionAsync: vi.fn(),
+  openAuthSessionAsync: mocked.openAuthSessionAsync,
   openBrowserAsync: vi.fn(),
+}));
+
+vi.mock("react-native", () => ({
+  Platform: {
+    OS: "web",
+  },
 }));
 
 vi.mock("@kinde/jwt-validator", () => ({
@@ -112,17 +119,24 @@ vi.mock("@kinde/js-utils", () => ({
   getClaims: vi.fn(),
   getCurrentOrganization: vi.fn(),
   getFlag: vi.fn(),
+  getInsecureStorage: mocked.getInsecureStorage,
   getRoles: vi.fn(),
   getUserOrganizations: vi.fn(),
   getUserProfile: mocked.getUserProfile,
   mapLoginMethodParamsForUrl: mocked.mapLoginMethodParamsForUrl,
+  LocalStorage: class {},
+  MemoryStorage: class {},
   refreshToken: mocked.refreshToken,
+  clearInsecureStorage: mocked.clearInsecureStorage,
   setActiveStorage: vi.fn(),
+  setInsecureStorage: mocked.setInsecureStorage,
   setRefreshTimer: mocked.setRefreshTimer,
+  storageSettings: mocked.storageSettings,
 }));
 
 const configureProviderState = (storage: {
   getSessionItem: ReturnType<typeof vi.fn>;
+  removeSessionItem: ReturnType<typeof vi.fn>;
   removeItems: ReturnType<typeof vi.fn>;
   setSessionItem: ReturnType<typeof vi.fn>;
 }) => {
@@ -188,18 +202,30 @@ const createProvider = async (
 describe("KindeAuthProvider Expo SDK 56 migration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
     vi.resetModules();
+    mocked.getInsecureStorage.mockReturnValue(null);
+    mocked.storageSettings.useInsecureForRefreshToken = false;
   });
 
   it("completes pending web auth sessions when the module loads", async () => {
+    vi.stubGlobal("window", {});
+
     await import("./KindeAuthProvider");
 
     expect(mocked.maybeCompleteAuthSession).toHaveBeenCalledTimes(1);
   });
 
+  it("skips pending web auth completion during import when no browser window exists", async () => {
+    await import("./KindeAuthProvider");
+
+    expect(mocked.maybeCompleteAuthSession).not.toHaveBeenCalled();
+  });
+
   it("uses Expo-managed redirect inference instead of a manual native flag", async () => {
     const storage = {
       getSessionItem: vi.fn(async () => null),
+      removeSessionItem: vi.fn(async () => undefined),
       removeItems: vi.fn(async () => undefined),
       setSessionItem: vi.fn(async () => undefined),
     };
@@ -222,7 +248,12 @@ describe("KindeAuthProvider Expo SDK 56 migration", () => {
   });
 
   it("does not schedule token refreshes when the code exchange omits a refresh token", async () => {
-    const storage = createStorage();
+    const storage = {
+      getSessionItem: vi.fn(async () => null),
+      removeSessionItem: vi.fn(async () => undefined),
+      removeItems: vi.fn(async () => undefined),
+      setSessionItem: vi.fn(async () => undefined),
+    };
 
     configureProviderState(storage);
 
@@ -249,7 +280,54 @@ describe("KindeAuthProvider Expo SDK 56 migration", () => {
       "refresh_token",
       expect.anything(),
     );
+    expect(storage.removeSessionItem).toHaveBeenCalledWith("refresh_token");
     expect(mocked.setRefreshTimer).not.toHaveBeenCalled();
+  });
+
+  it("prioritizes Kinde hosted logout when revokeToken is requested", async () => {
+    const storage = {
+      getSessionItem: vi.fn(async (key: string) =>
+        key === "access_token" ? "access-token" : null,
+      ),
+      removeSessionItem: vi.fn(async () => undefined),
+      removeItems: vi.fn(async () => undefined),
+      setSessionItem: vi.fn(async () => undefined),
+    };
+
+    configureProviderState(storage);
+
+    const { KindeAuthProvider } = await import("./KindeAuthProvider");
+    const providerElement = KindeAuthProvider({
+      callbacks: undefined,
+      children: null,
+      config: {
+        clientId: "client-id",
+        domain: "https://example.kinde.com",
+      },
+    });
+
+    const logout = (
+      providerElement as {
+        props: {
+          value: {
+            logout: (args?: unknown) => Promise<unknown>;
+          };
+        };
+      }
+    ).props.value.logout;
+
+    await logout({ revokeToken: true });
+
+    const logoutUrl = new URL(mocked.openAuthSessionAsync.mock.calls[0][0]);
+
+    expect(logoutUrl.origin + logoutUrl.pathname).toBe(
+      "https://example.kinde.com/logout",
+    );
+    expect(logoutUrl.searchParams.get("redirect")).toBe("kinde://redirect");
+    expect(mocked.openAuthSessionAsync).toHaveBeenCalledWith(
+      expect.any(String),
+      "kinde://redirect",
+    );
   });
 });
 
