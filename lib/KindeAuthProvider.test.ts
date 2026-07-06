@@ -42,7 +42,7 @@ vi.mock("expo-auth-session", () => ({
     constructor(_config: unknown) {}
 
     async promptAsync(...args: unknown[]) {
-      return mocked.promptAsync(...args);
+      return mocked.promptAsync(...args as Parameters<typeof mocked.promptAsync>);
     }
   },
   exchangeCodeAsync: mocked.exchangeCodeAsync,
