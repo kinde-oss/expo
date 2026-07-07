@@ -1,5 +1,37 @@
 import * as React from "react";
+import type { AuthSessionResult } from "expo-auth-session";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { KindeAuthProvider } from "./KindeAuthProvider";
+import type { UserProfile } from "./types";
+
+type ProviderCallbacks = NonNullable<
+  Parameters<typeof KindeAuthProvider>[0]["callbacks"]
+>;
+
+const authSuccessResult = (
+  params: Record<string, string> = { code: "authorization-code" },
+): AuthSessionResult => ({
+  type: "success",
+  params,
+  url: `kinde://redirect?code=${params.code ?? ""}`,
+  errorCode: null,
+  authentication: null,
+});
+
+const silentAuthOAuthErrorResult = (): AuthSessionResult => ({
+  type: "error",
+  params: {
+    error: "login_required",
+    error_description: "Silent authentication requires user interaction",
+  },
+  url: "kinde://redirect?error=login_required&error_description=Silent%20authentication%20requires%20user%20interaction",
+  errorCode: "login_required",
+  authentication: null,
+});
+
+const userCancelledAuthResult = (): AuthSessionResult => ({
+  type: "cancel",
+});
 
 const mocked = vi.hoisted(() => ({
   clearInsecureStorage: vi.fn(),
@@ -8,15 +40,17 @@ const mocked = vi.hoisted(() => ({
     idToken: "id-token",
   })),
   getInsecureStorage: vi.fn(() => null),
-  getUserProfile: vi.fn(async () => null),
+  getUserProfile: vi.fn(async (): Promise<UserProfile | null> => null),
   makeRedirectUri: vi.fn(() => "kinde://redirect"),
   mapLoginMethodParamsForUrl: vi.fn(() => ({})),
   maybeCompleteAuthSession: vi.fn(),
-  promptAsync: vi.fn(async () => ({
+  promptAsync: vi.fn(async (): Promise<AuthSessionResult> =>
+    authSuccessResult(),
+  ),
+  openAuthSessionAsync: vi.fn(async (url: string) => ({
     type: "success" as const,
-    params: { code: "authorization-code" },
+    url,
   })),
-  openAuthSessionAsync: vi.fn(async () => undefined),
   removeSessionItem: vi.fn(async () => undefined),
   refreshToken: vi.fn(async () => ({ success: false })),
   setInsecureStorage: vi.fn(),
@@ -150,13 +184,14 @@ const configureProviderState = (storage: {
     .mockImplementationOnce(() => [true, vi.fn()]);
 };
 
-const mockUser = {
+const mockUser: UserProfile = {
   id: "user-1",
   email: "test@example.com",
 };
 
 const createStorage = () => ({
   getSessionItem: vi.fn(async () => null),
+  removeSessionItem: vi.fn(async () => undefined),
   removeItems: vi.fn(async () => undefined),
   setSessionItem: vi.fn(async () => undefined),
 });
@@ -174,7 +209,7 @@ const createProvider = async (
 
   const { KindeAuthProvider } = await import("./KindeAuthProvider");
   const providerElement = KindeAuthProvider({
-    callbacks,
+    callbacks: callbacks as ProviderCallbacks | undefined,
     children: null,
     config: {
       clientId: "client-id",
@@ -336,10 +371,7 @@ describe("KindeAuthProvider switchOrg", () => {
     vi.clearAllMocks();
     vi.resetModules();
     mocked.getUserProfile.mockResolvedValue(mockUser);
-    mocked.promptAsync.mockResolvedValue({
-      type: "success",
-      params: { code: "authorization-code" },
-    });
+    mocked.promptAsync.mockResolvedValue(authSuccessResult());
   });
 
   afterEach(() => {
@@ -385,6 +417,53 @@ describe("KindeAuthProvider switchOrg", () => {
     expect(onError).not.toHaveBeenCalled();
   });
 
+  it("returns failure without interactive retry when silent auth returns an OAuth error", async () => {
+    const onSuccess = vi.fn();
+    const onEvent = vi.fn();
+    const onError = vi.fn();
+
+    mocked.promptAsync.mockResolvedValueOnce(silentAuthOAuthErrorResult());
+
+    const { switchOrg } = await createProvider({
+      onError,
+      onEvent,
+      onSuccess,
+    });
+
+    const result = await switchOrg("org_abc");
+
+    expect(result).toEqual({
+      success: false,
+      errorMessage: "Unknown error",
+    });
+    expect(mocked.promptAsync).toHaveBeenCalledTimes(1);
+    expect(mocked.mapLoginMethodParamsForUrl).toHaveBeenCalledTimes(1);
+    expect(mocked.mapLoginMethodParamsForUrl).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orgCode: "org_abc",
+        prompt: "none",
+      }),
+    );
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(onEvent).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalledWith(
+      {
+        error: "ERR_LOGIN",
+        errorDescription: "Unknown error",
+      },
+      {},
+      expect.objectContaining({ switchOrg: expect.any(Function) }),
+    );
+    expect(onError).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        errorDescription: SWITCH_ORG_SILENT_AUTH_TIMEOUT_MESSAGE,
+      }),
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
   it("falls back to interactive login after silent timeout and fires callbacks once", async () => {
     vi.useFakeTimers();
     const onSuccess = vi.fn();
@@ -392,10 +471,7 @@ describe("KindeAuthProvider switchOrg", () => {
     const onError = vi.fn();
 
     mocked.promptAsync.mockImplementationOnce(() => new Promise(() => {}));
-    mocked.promptAsync.mockResolvedValueOnce({
-      type: "success",
-      params: { code: "authorization-code" },
-    });
+    mocked.promptAsync.mockResolvedValueOnce(authSuccessResult());
 
     const { switchOrg } = await createProvider({
       onError,
@@ -437,17 +513,14 @@ describe("KindeAuthProvider switchOrg", () => {
     expect(onError).not.toHaveBeenCalled();
   });
 
-  it("reports error when interactive fallback fails after silent timeout", async () => {
+  it("reports error when interactive fallback is cancelled after silent timeout", async () => {
     vi.useFakeTimers();
     const onSuccess = vi.fn();
     const onEvent = vi.fn();
     const onError = vi.fn();
 
     mocked.promptAsync.mockImplementationOnce(() => new Promise(() => {}));
-    mocked.promptAsync.mockResolvedValueOnce({
-      type: "cancel",
-      params: {},
-    });
+    mocked.promptAsync.mockResolvedValueOnce(userCancelledAuthResult());
 
     const { switchOrg } = await createProvider({
       onError,
