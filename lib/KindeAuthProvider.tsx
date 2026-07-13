@@ -393,8 +393,9 @@ export const KindeAuthProvider = ({
     const response = await authenticate({
       ...options,
       prompt: PromptTypes.login,
+      suppressCallbacks: true,
     });
-    handleLoginResponse(response, AuthEvent.login);
+    await handleLoginResponse(response, AuthEvent.login);
     return response;
   };
 
@@ -488,6 +489,7 @@ export const KindeAuthProvider = ({
     const response = await authenticate({
       ...options,
       prompt: PromptTypes.create,
+      suppressCallbacks: true,
     });
     await handleLoginResponse(response, AuthEvent.register);
     return response;
