@@ -11,6 +11,7 @@ import {
 } from "@kinde/js-utils";
 import type { DiscoveryDocument } from "expo-auth-session";
 import { maybeCompleteAuthSession } from "expo-web-browser";
+import type { AuthSessionOpenOptions } from "expo-web-browser";
 
 type WebWindowLike = {
   localStorage?: {
@@ -28,7 +29,12 @@ type StorageFactoryOptions = {
 type RemoteLogoutOptions = {
   discovery: Pick<DiscoveryDocument, "endSessionEndpoint"> | null;
   redirectUri: string;
-  openAuthSession: (url: string, redirectUri: string) => Promise<unknown>;
+  openAuthSession: (
+    url: string,
+    redirectUri: string,
+    options?: AuthSessionOpenOptions,
+  ) => Promise<unknown>;
+  promptOptions?: AuthSessionOpenOptions;
 };
 
 const STORAGE_TEST_KEY = "__kinde_storage_test__";
@@ -125,10 +131,11 @@ export const performRemoteLogout = async ({
   discovery,
   redirectUri,
   openAuthSession,
+  promptOptions,
 }: RemoteLogoutOptions): Promise<void> => {
   if (discovery?.endSessionEndpoint) {
     const logoutUrl = new URL(discovery.endSessionEndpoint);
     logoutUrl.searchParams.set("redirect", redirectUri);
-    await openAuthSession(logoutUrl.toString(), redirectUri);
+    await openAuthSession(logoutUrl.toString(), redirectUri, promptOptions);
   }
 };

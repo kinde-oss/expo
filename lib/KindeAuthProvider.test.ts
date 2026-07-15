@@ -12,6 +12,10 @@ const mocked = vi.hoisted(() => ({
   makeRedirectUri: vi.fn(() => "kinde://redirect"),
   maybeCompleteAuthSession: vi.fn(),
   openAuthSessionAsync: vi.fn(async () => undefined),
+  promptAsync: vi.fn(async (_discovery?: unknown, _options?: unknown) => ({
+    type: "success" as const,
+    params: { code: "authorization-code" },
+  })),
   removeSessionItem: vi.fn(async () => undefined),
   refreshToken: vi.fn(async () => ({ success: false })),
   setInsecureStorage: vi.fn(),
@@ -38,11 +42,8 @@ vi.mock("expo-auth-session", () => ({
 
     constructor(_config: unknown) {}
 
-    async promptAsync() {
-      return {
-        type: "success" as const,
-        params: { code: "authorization-code" },
-      };
+    async promptAsync(discovery: unknown, options?: unknown) {
+      return mocked.promptAsync(discovery, options);
     }
   },
   exchangeCodeAsync: mocked.exchangeCodeAsync,
@@ -228,6 +229,46 @@ describe("KindeAuthProvider Expo SDK 56 migration", () => {
     expect(mocked.setRefreshTimer).not.toHaveBeenCalled();
   });
 
+  it("forwards config.promptOptions to the login auth prompt", async () => {
+    const storage = {
+      getSessionItem: vi.fn(async () => null),
+      removeSessionItem: vi.fn(async () => undefined),
+      removeItems: vi.fn(async () => undefined),
+      setSessionItem: vi.fn(async () => undefined),
+    };
+
+    configureProviderState(storage);
+
+    const { KindeAuthProvider } = await import("./KindeAuthProvider");
+    const providerElement = KindeAuthProvider({
+      callbacks: undefined,
+      children: null,
+      config: {
+        clientId: "client-id",
+        domain: "https://example.kinde.com",
+        promptOptions: { preferEphemeralSession: true },
+      },
+    });
+
+    const login = (
+      providerElement as {
+        props: { value: { login: (args?: unknown) => Promise<unknown> } };
+      }
+    ).props.value.login;
+
+    await login();
+
+    expect(mocked.promptAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorizationEndpoint: "https://example.kinde.com/oauth2/auth",
+      }),
+      expect.objectContaining({
+        showInRecents: true,
+        preferEphemeralSession: true,
+      }),
+    );
+  });
+
   it("prioritizes Kinde hosted logout when revokeToken is requested", async () => {
     const storage = {
       getSessionItem: vi.fn(async (key: string) =>
@@ -271,6 +312,49 @@ describe("KindeAuthProvider Expo SDK 56 migration", () => {
     expect(mocked.openAuthSessionAsync).toHaveBeenCalledWith(
       expect.any(String),
       "kinde://redirect",
+      undefined,
+    );
+  });
+
+  it("forwards config.promptOptions to the hosted logout auth session", async () => {
+    const storage = {
+      getSessionItem: vi.fn(async (key: string) =>
+        key === "access_token" ? "access-token" : null,
+      ),
+      removeSessionItem: vi.fn(async () => undefined),
+      removeItems: vi.fn(async () => undefined),
+      setSessionItem: vi.fn(async () => undefined),
+    };
+
+    configureProviderState(storage);
+
+    const { KindeAuthProvider } = await import("./KindeAuthProvider");
+    const providerElement = KindeAuthProvider({
+      callbacks: undefined,
+      children: null,
+      config: {
+        clientId: "client-id",
+        domain: "https://example.kinde.com",
+        promptOptions: { preferEphemeralSession: true },
+      },
+    });
+
+    const logout = (
+      providerElement as {
+        props: {
+          value: {
+            logout: (args?: unknown) => Promise<unknown>;
+          };
+        };
+      }
+    ).props.value.logout;
+
+    await logout();
+
+    expect(mocked.openAuthSessionAsync).toHaveBeenCalledWith(
+      expect.any(String),
+      "kinde://redirect",
+      { preferEphemeralSession: true },
     );
   });
 });

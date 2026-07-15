@@ -25,6 +25,7 @@ import {
 import { validateToken } from "@kinde/jwt-validator";
 import {
   AuthRequest,
+  AuthRequestPromptOptions,
   DiscoveryDocument,
   exchangeCodeAsync,
   makeRedirectUri,
@@ -116,6 +117,7 @@ type KindeAuthConfig = {
   clientId: string | undefined;
   scopes?: string;
   enhancedSecurity?: boolean;
+  promptOptions?: AuthRequestPromptOptions;
 };
 
 export const KindeAuthProvider = ({
@@ -226,6 +228,7 @@ export const KindeAuthProvider = ({
         } as DiscoveryDocument,
         {
           showInRecents: true,
+          ...config.promptOptions,
         },
       );
       if (request && codeResponse?.type === "success") {
@@ -462,8 +465,9 @@ export const KindeAuthProvider = ({
       await performRemoteLogout({
         discovery,
         redirectUri,
-        openAuthSession: async (url, authRedirectUri) =>
-          openAuthSessionAsync(url, authRedirectUri),
+        promptOptions: config.promptOptions,
+        openAuthSession: async (url, authRedirectUri, options) =>
+          openAuthSessionAsync(url, authRedirectUri, options),
       });
     } catch (err: unknown) {
       console.error(err);
