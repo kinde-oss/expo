@@ -9,6 +9,7 @@ import {
 } from "./types";
 import {
   LoginMethodParams,
+  OrgCode,
   Role,
   RefreshType,
   RefreshTokenResult,
@@ -20,6 +21,10 @@ import { JWTDecoded } from "@kinde/jwt-decoder";
 export interface KindeAuthHook {
   login: (options?: Partial<LoginMethodParams>) => Promise<LoginResponse>;
   register: (options?: Partial<LoginMethodParams>) => Promise<LoginResponse>;
+  switchOrg: (
+    orgCode: OrgCode,
+    options?: { redirectURL?: string },
+  ) => Promise<LoginResponse>;
   logout: (options?: Partial<LogoutRequest>) => Promise<LogoutResult>;
   portal: (subNav?: PortalPage) => Promise<void>;
   getAccessToken: () => Promise<string | null>;
