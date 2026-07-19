@@ -4,7 +4,16 @@ import {
   storageSettings,
   splitString,
 } from "@kinde/js-utils";
-import * as SecureStore from "expo-secure-store";
+
+let expoSecureStore: typeof import("expo-secure-store") | undefined = undefined;
+
+async function waitForExpoSecureStore() {
+  let tries = 0;
+  while (!expoSecureStore && tries < 20) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    tries++;
+  }
+}
 
 /**
  * Provides an Expo secure storage based session manager implementation.
@@ -14,6 +23,19 @@ export class ExpoSecureStore<
   V extends string = StorageKeys,
 > extends SessionBase<V> {
   asyncStore = true;
+
+  constructor() {
+    super();
+    this.loadExpoStore();
+  }
+
+  private async loadExpoStore() {
+    try {
+      expoSecureStore = await import("expo-secure-store");
+    } catch (error) {
+      console.error("Error loading dependency expo storage:", error);
+    }
+  }
 
   /**
    * Clears all items from session store.
@@ -40,6 +62,7 @@ export class ExpoSecureStore<
       throw new Error("Item value must be a string");
     }
 
+    await waitForExpoSecureStore();
     await this.removeSessionItem(itemKey);
 
     const chunks = splitString(
@@ -48,7 +71,7 @@ export class ExpoSecureStore<
     );
     await Promise.all(
       chunks.map((splitValue, index) =>
-        SecureStore.setItemAsync(
+        expoSecureStore!.setItemAsync(
           `${storageSettings.keyPrefix}${itemKey}${index}`,
           splitValue,
         ),
@@ -63,10 +86,12 @@ export class ExpoSecureStore<
    * @returns {unknown | null}
    */
   async getSessionItem(itemKey: V | StorageKeys): Promise<unknown | null> {
+    await waitForExpoSecureStore();
+
     const chunks = [];
     let index = 0;
 
-    let chunk = await SecureStore.getItemAsync(
+    let chunk = await expoSecureStore!.getItemAsync(
       `${storageSettings.keyPrefix}${String(itemKey)}${index}`,
     );
 
@@ -74,7 +99,7 @@ export class ExpoSecureStore<
       chunks.push(chunk);
       index++;
 
-      chunk = await SecureStore.getItemAsync(
+      chunk = await expoSecureStore!.getItemAsync(
         `${storageSettings.keyPrefix}${String(itemKey)}${index}`,
       );
     }
@@ -88,19 +113,21 @@ export class ExpoSecureStore<
    * @returns {void}
    */
   async removeSessionItem(itemKey: V | StorageKeys): Promise<void> {
+    await waitForExpoSecureStore();
+
     let index = 0;
 
-    let chunk = await SecureStore.getItemAsync(
+    let chunk = await expoSecureStore!.getItemAsync(
       `${storageSettings.keyPrefix}${String(itemKey)}${index}`,
     );
 
     while (chunk) {
-      await SecureStore.deleteItemAsync(
+      await expoSecureStore!.deleteItemAsync(
         `${storageSettings.keyPrefix}${String(itemKey)}${index}`,
       );
       index++;
 
-      chunk = await SecureStore.getItemAsync(
+      chunk = await expoSecureStore!.getItemAsync(
         `${storageSettings.keyPrefix}${String(itemKey)}${index}`,
       );
     }
