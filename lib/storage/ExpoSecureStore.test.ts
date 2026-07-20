@@ -110,4 +110,27 @@ describe("ExpoSecureStore", () => {
       "a",
     );
   });
+
+  it("preserves empty-string chunks when reading and deleting", async () => {
+    const store = new ExpoSecureStore();
+
+    mockedSecureStore.getItemAsync
+      .mockResolvedValueOnce("hello")
+      .mockResolvedValueOnce("")
+      .mockResolvedValueOnce("world")
+      .mockResolvedValueOnce(null);
+
+    const result = await store.getSessionItem(StorageKeys.accessToken);
+    expect(result).toBe("helloworld");
+
+    mockedSecureStore.getItemAsync
+      .mockResolvedValueOnce("hello")
+      .mockResolvedValueOnce("")
+      .mockResolvedValueOnce("world")
+      .mockResolvedValueOnce(null);
+
+    await store.removeSessionItem(StorageKeys.accessToken);
+
+    expect(mockedSecureStore.deleteItemAsync).toHaveBeenCalledTimes(3);
+  });
 });

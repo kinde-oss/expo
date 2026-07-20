@@ -95,7 +95,7 @@ export class ExpoSecureStore<
       `${storageSettings.keyPrefix}${String(itemKey)}${index}`,
     );
 
-    while (chunk) {
+    while (chunk !== null) {
       chunks.push(chunk);
       index++;
 
@@ -121,7 +121,7 @@ export class ExpoSecureStore<
       `${storageSettings.keyPrefix}${String(itemKey)}${index}`,
     );
 
-    while (chunk) {
+    while (chunk !== null) {
       await expoSecureStore!.deleteItemAsync(
         `${storageSettings.keyPrefix}${String(itemKey)}${index}`,
       );
