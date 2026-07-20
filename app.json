@@ -1,8 +1,5 @@
 {
   "name": "kinde-expo",
   "slug": "kinde-expo",
-  "plugins": [
-    "expo-secure-store",
-    "expo-web-browser"
-  ]
+  "plugins": ["expo-secure-store", "expo-web-browser"]
 }
