@@ -13,6 +13,7 @@ import {
   RefreshType,
   generatePortalUrl,
   PortalPage,
+  OrgCode,
 } from "@kinde/js-utils";
 import {
   mapLoginMethodParamsForUrl,
@@ -22,21 +23,14 @@ import {
   setRefreshTimer,
   refreshToken,
 } from "@kinde/js-utils";
-import { ExpoSecureStore } from "./storage/ExpoSecureStore";
 import { validateToken } from "@kinde/jwt-validator";
 import {
   AuthRequest,
   DiscoveryDocument,
   exchangeCodeAsync,
   makeRedirectUri,
-  revokeAsync,
-  TokenTypeHint,
 } from "expo-auth-session";
-import {
-  maybeCompleteAuthSession,
-  openAuthSessionAsync,
-  openBrowserAsync,
-} from "expo-web-browser";
+import { openAuthSessionAsync, openBrowserAsync } from "expo-web-browser";
 import {
   createContext,
   useEffect,
@@ -55,6 +49,14 @@ import {
 import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
 import { decode, encode } from "base-64";
+import { Platform } from "react-native";
+import {
+  clearPersistedRefreshToken,
+  completePendingWebAuthSession,
+  createSessionStorage,
+  performRemoteLogout,
+  persistRefreshToken,
+} from "./storage";
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
 );
@@ -66,7 +68,10 @@ if (typeof globalThis !== "undefined") {
   globalThis.atob = decode;
 }
 
-maybeCompleteAuthSession();
+completePendingWebAuthSession(
+  Platform.OS,
+  typeof window !== "undefined" ? window : undefined,
+);
 
 export type ErrorProps = {
   error: string;
@@ -77,8 +82,20 @@ enum AuthEvent {
   login = "login",
   logout = "logout",
   register = "register",
+  switchOrg = "switchOrg",
   tokenRefreshed = "tokenRefreshed",
 }
+
+const SWITCH_ORG_SILENT_AUTH_TIMEOUT_MS = 30_000;
+const SWITCH_ORG_SILENT_AUTH_TIMEOUT_MESSAGE =
+  "Organization switch timed out waiting for silent authentication. Your identity provider session may be stale.";
+
+type SwitchOrgOptions = NonNullable<Parameters<KindeAuthHook["switchOrg"]>[1]>;
+
+type AuthenticateOptions = Partial<LoginMethodParams> & {
+  authTimeoutMs?: number;
+  suppressCallbacks?: boolean;
+};
 
 type EventTypes = {
   (
@@ -143,7 +160,10 @@ export const KindeAuthProvider = ({
   useEffect(() => {
     const initializeStorage = async () => {
       try {
-        const storageInstance = new ExpoSecureStore();
+        const storageInstance = await createSessionStorage({
+          platformOS: Platform.OS,
+          windowObject: typeof window !== "undefined" ? window : undefined,
+        });
         setActiveStorage(storageInstance);
         setStorage(storageInstance);
         setIsStorageReady(true);
@@ -184,13 +204,15 @@ export const KindeAuthProvider = ({
   };
 
   const authenticate = async (
-    options: Partial<LoginMethodParams> = {},
+    options: AuthenticateOptions = {},
   ): Promise<LoginResponse> => {
-    const authRedirectUri = options.redirectURL || redirectUri;
+    const { authTimeoutMs, suppressCallbacks, ...loginOptions } = options;
+    const authRedirectUri = loginOptions.redirectURL || redirectUri;
     if (!authRedirectUri) {
       return {
         success: false,
-        errorMessage: "This library only works on a mobile device",
+        errorMessage:
+          "A valid redirect URL is required for the current platform.",
       };
     }
 
@@ -206,13 +228,13 @@ export const KindeAuthProvider = ({
       redirectUri: authRedirectUri,
       scopes: scopes,
       extraParams: {
-        ...mapLoginMethodParamsForUrl(options),
+        ...mapLoginMethodParamsForUrl(loginOptions),
         has_success_page: "true",
       },
     });
 
     try {
-      const codeResponse = await request.promptAsync(
+      const promptAsync = request.promptAsync(
         {
           authorizationEndpoint: `${domain}/oauth2/auth`,
         } as DiscoveryDocument,
@@ -220,6 +242,17 @@ export const KindeAuthProvider = ({
           showInRecents: true,
         },
       );
+      const codeResponse = authTimeoutMs
+        ? await Promise.race([
+            promptAsync,
+            new Promise<never>((_, reject) => {
+              setTimeout(
+                () => reject(new Error(SWITCH_ORG_SILENT_AUTH_TIMEOUT_MESSAGE)),
+                authTimeoutMs,
+              );
+            }),
+          ])
+        : await promptAsync;
       if (request && codeResponse?.type === "success") {
         const exchangeCodeResponse = await exchangeCodeAsync(
           {
@@ -286,13 +319,9 @@ export const KindeAuthProvider = ({
             setIsAuthenticated(true);
           }
         }
+        await persistRefreshToken(storage, exchangeCodeResponse.refreshToken);
 
         if (exchangeCodeResponse.refreshToken) {
-          await storage.setSessionItem(
-            StorageKeys.refreshToken,
-            exchangeCodeResponse.refreshToken,
-          );
-
           setRefreshTimer(exchangeCodeResponse.expiresIn || 60, async () => {
             try {
               await refreshToken({ domain, clientId, onRefresh });
@@ -310,7 +339,7 @@ export const KindeAuthProvider = ({
           });
         }
         const user = await getUserProfile();
-        if (user) {
+        if (user && !suppressCallbacks) {
           callbacks?.onSuccess?.(user, {}, contextValue);
         }
 
@@ -320,14 +349,16 @@ export const KindeAuthProvider = ({
           idToken: exchangeCodeResponse.idToken!,
         };
       }
-      callbacks?.onError?.(
-        {
-          error: "ERR_CODE_EXCHANGE",
-          errorDescription: "Unknown Error",
-        },
-        {},
-        contextValue,
-      );
+      if (!suppressCallbacks) {
+        callbacks?.onError?.(
+          {
+            error: "ERR_CODE_EXCHANGE",
+            errorDescription: "Unknown Error",
+          },
+          {},
+          contextValue,
+        );
+      }
       return {
         success: false,
         errorMessage: "Unknown error",
@@ -337,14 +368,16 @@ export const KindeAuthProvider = ({
       const errorDescription =
         err instanceof Error ? err.message : "Unknown error";
 
-      callbacks?.onError?.(
-        {
-          error: "ERR_CODE_EXCHANGE",
-          errorDescription,
-        },
-        {},
-        contextValue,
-      );
+      if (!suppressCallbacks) {
+        callbacks?.onError?.(
+          {
+            error: "ERR_CODE_EXCHANGE",
+            errorDescription,
+          },
+          {},
+          contextValue,
+        );
+      }
       return { success: false, errorMessage: errorDescription };
     }
   };
@@ -360,8 +393,37 @@ export const KindeAuthProvider = ({
     const response = await authenticate({
       ...options,
       prompt: PromptTypes.login,
+      suppressCallbacks: true,
     });
-    handleLoginResponse(response, AuthEvent.login);
+    await handleLoginResponse(response, AuthEvent.login);
+    return response;
+  };
+
+  const switchOrg = async (
+    orgCode: OrgCode,
+    options: SwitchOrgOptions = {},
+  ): Promise<LoginResponse> => {
+    let response = await authenticate({
+      ...options,
+      orgCode: orgCode,
+      prompt: PromptTypes.none,
+      authTimeoutMs: SWITCH_ORG_SILENT_AUTH_TIMEOUT_MS,
+      suppressCallbacks: true,
+    });
+
+    if (
+      !response.success &&
+      response.errorMessage === SWITCH_ORG_SILENT_AUTH_TIMEOUT_MESSAGE
+    ) {
+      response = await authenticate({
+        ...options,
+        orgCode: orgCode,
+        prompt: PromptTypes.login,
+        suppressCallbacks: true,
+      });
+    }
+
+    await handleLoginResponse(response, AuthEvent.switchOrg);
     return response;
   };
 
@@ -427,6 +489,7 @@ export const KindeAuthProvider = ({
     const response = await authenticate({
       ...options,
       prompt: PromptTypes.create,
+      suppressCallbacks: true,
     });
     await handleLoginResponse(response, AuthEvent.register);
     return response;
@@ -438,7 +501,7 @@ export const KindeAuthProvider = ({
    * @returns {Promise<LogoutResult>}
    */
   async function logout({
-    revokeToken,
+    revokeToken: _revokeToken,
   }: Partial<LogoutRequest> = {}): Promise<LogoutResult> {
     if (!storage) {
       return Promise.resolve({
@@ -446,43 +509,34 @@ export const KindeAuthProvider = ({
       });
     }
     const cleanup = async () => {
-      await storage.removeItems(
-        StorageKeys.accessToken,
-        StorageKeys.idToken,
-        StorageKeys.refreshToken,
-      );
+      await storage.removeItems(StorageKeys.accessToken, StorageKeys.idToken);
+      await clearPersistedRefreshToken(storage);
       callbacks?.onEvent?.(AuthEvent.logout, {}, contextValue);
       setIsAuthenticated(false);
     };
 
-    return new Promise(async (resolve) => {
-      const accesstoken = (await storage.getSessionItem(
-        StorageKeys.accessToken,
-      )) as string;
-      if (accesstoken && discovery) {
-        if (revokeToken) {
-          revokeAsync(
-            { token: accesstoken!, tokenTypeHint: TokenTypeHint.AccessToken },
-            discovery,
-          )
-            .then(async () => {
-              await cleanup();
-              resolve({ success: true });
-            })
-            .catch((err: unknown) => {
-              console.error(err);
-              resolve({ success: false });
-            });
-        } else {
-          await openAuthSessionAsync(
-            `${discovery?.endSessionEndpoint}?redirect=${redirectUri}`,
-          );
-          await cleanup();
-          resolve({ success: true });
-        }
-      }
-      resolve({ success: true });
-    });
+    let success = true;
+
+    try {
+      await performRemoteLogout({
+        discovery,
+        redirectUri,
+        openAuthSession: async (url, authRedirectUri) =>
+          openAuthSessionAsync(url, authRedirectUri),
+      });
+    } catch (err: unknown) {
+      console.error(err);
+      success = false;
+    }
+
+    try {
+      await cleanup();
+    } catch (err: unknown) {
+      console.error(err);
+      success = false;
+    }
+
+    return { success };
   }
 
   /**
@@ -575,7 +629,7 @@ export const KindeAuthProvider = ({
       logout,
       register,
       portal,
-
+      switchOrg,
       getAccessToken,
       getIdToken,
       getDecodedToken,
@@ -663,6 +717,7 @@ export const KindeAuthProvider = ({
     logout,
     register,
     portal,
+    switchOrg,
     isStorageReady,
     storage,
     isAuthenticated,
