@@ -13,6 +13,7 @@ import {
   RefreshType,
   generatePortalUrl,
   PortalPage,
+  OrgCode,
 } from "@kinde/js-utils";
 import {
   mapLoginMethodParamsForUrl,
@@ -82,8 +83,20 @@ enum AuthEvent {
   login = "login",
   logout = "logout",
   register = "register",
+  switchOrg = "switchOrg",
   tokenRefreshed = "tokenRefreshed",
 }
+
+const SWITCH_ORG_SILENT_AUTH_TIMEOUT_MS = 30_000;
+const SWITCH_ORG_SILENT_AUTH_TIMEOUT_MESSAGE =
+  "Organization switch timed out waiting for silent authentication. Your identity provider session may be stale.";
+
+type SwitchOrgOptions = NonNullable<Parameters<KindeAuthHook["switchOrg"]>[1]>;
+
+type AuthenticateOptions = Partial<LoginMethodParams> & {
+  authTimeoutMs?: number;
+  suppressCallbacks?: boolean;
+};
 
 type EventTypes = {
   (
@@ -193,9 +206,10 @@ export const KindeAuthProvider = ({
   };
 
   const authenticate = async (
-    options: Partial<LoginMethodParams> = {},
+    options: AuthenticateOptions = {},
   ): Promise<LoginResponse> => {
-    const authRedirectUri = options.redirectURL || redirectUri;
+    const { authTimeoutMs, suppressCallbacks, ...loginOptions } = options;
+    const authRedirectUri = loginOptions.redirectURL || redirectUri;
     if (!authRedirectUri) {
       return {
         success: false,
@@ -216,13 +230,13 @@ export const KindeAuthProvider = ({
       redirectUri: authRedirectUri,
       scopes: scopes,
       extraParams: {
-        ...mapLoginMethodParamsForUrl(options),
+        ...mapLoginMethodParamsForUrl(loginOptions),
         has_success_page: "true",
       },
     });
 
     try {
-      const codeResponse = await request.promptAsync(
+      const promptAsync = request.promptAsync(
         {
           authorizationEndpoint: `${domain}/oauth2/auth`,
         } as DiscoveryDocument,
@@ -231,6 +245,17 @@ export const KindeAuthProvider = ({
           ...config.promptOptions,
         },
       );
+      const codeResponse = authTimeoutMs
+        ? await Promise.race([
+            promptAsync,
+            new Promise<never>((_, reject) => {
+              setTimeout(
+                () => reject(new Error(SWITCH_ORG_SILENT_AUTH_TIMEOUT_MESSAGE)),
+                authTimeoutMs,
+              );
+            }),
+          ])
+        : await promptAsync;
       if (request && codeResponse?.type === "success") {
         const exchangeCodeResponse = await exchangeCodeAsync(
           {
@@ -317,7 +342,7 @@ export const KindeAuthProvider = ({
           });
         }
         const user = await getUserProfile();
-        if (user) {
+        if (user && !suppressCallbacks) {
           callbacks?.onSuccess?.(user, {}, contextValue);
         }
 
@@ -327,14 +352,16 @@ export const KindeAuthProvider = ({
           idToken: exchangeCodeResponse.idToken!,
         };
       }
-      callbacks?.onError?.(
-        {
-          error: "ERR_CODE_EXCHANGE",
-          errorDescription: "Unknown Error",
-        },
-        {},
-        contextValue,
-      );
+      if (!suppressCallbacks) {
+        callbacks?.onError?.(
+          {
+            error: "ERR_CODE_EXCHANGE",
+            errorDescription: "Unknown Error",
+          },
+          {},
+          contextValue,
+        );
+      }
       return {
         success: false,
         errorMessage: "Unknown error",
@@ -344,14 +371,16 @@ export const KindeAuthProvider = ({
       const errorDescription =
         err instanceof Error ? err.message : "Unknown error";
 
-      callbacks?.onError?.(
-        {
-          error: "ERR_CODE_EXCHANGE",
-          errorDescription,
-        },
-        {},
-        contextValue,
-      );
+      if (!suppressCallbacks) {
+        callbacks?.onError?.(
+          {
+            error: "ERR_CODE_EXCHANGE",
+            errorDescription,
+          },
+          {},
+          contextValue,
+        );
+      }
       return { success: false, errorMessage: errorDescription };
     }
   };
@@ -367,8 +396,37 @@ export const KindeAuthProvider = ({
     const response = await authenticate({
       ...options,
       prompt: PromptTypes.login,
+      suppressCallbacks: true,
     });
-    handleLoginResponse(response, AuthEvent.login);
+    await handleLoginResponse(response, AuthEvent.login);
+    return response;
+  };
+
+  const switchOrg = async (
+    orgCode: OrgCode,
+    options: SwitchOrgOptions = {},
+  ): Promise<LoginResponse> => {
+    let response = await authenticate({
+      ...options,
+      orgCode: orgCode,
+      prompt: PromptTypes.none,
+      authTimeoutMs: SWITCH_ORG_SILENT_AUTH_TIMEOUT_MS,
+      suppressCallbacks: true,
+    });
+
+    if (
+      !response.success &&
+      response.errorMessage === SWITCH_ORG_SILENT_AUTH_TIMEOUT_MESSAGE
+    ) {
+      response = await authenticate({
+        ...options,
+        orgCode: orgCode,
+        prompt: PromptTypes.login,
+        suppressCallbacks: true,
+      });
+    }
+
+    await handleLoginResponse(response, AuthEvent.switchOrg);
     return response;
   };
 
@@ -434,6 +492,7 @@ export const KindeAuthProvider = ({
     const response = await authenticate({
       ...options,
       prompt: PromptTypes.create,
+      suppressCallbacks: true,
     });
     await handleLoginResponse(response, AuthEvent.register);
     return response;
@@ -574,7 +633,7 @@ export const KindeAuthProvider = ({
       logout,
       register,
       portal,
-
+      switchOrg,
       getAccessToken,
       getIdToken,
       getDecodedToken,
@@ -662,6 +721,7 @@ export const KindeAuthProvider = ({
     logout,
     register,
     portal,
+    switchOrg,
     isStorageReady,
     storage,
     isAuthenticated,
