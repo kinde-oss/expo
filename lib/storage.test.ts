@@ -322,7 +322,7 @@ describe("storage helpers", () => {
     expect(openAuthSession).not.toHaveBeenCalled();
   });
 
-  it("forwards prompt options to the auth session (e.g. preferEphemeralSession)", async () => {
+  it("forwards browser options to the auth session (e.g. preferEphemeralSession)", async () => {
     const openAuthSession = vi.fn(async () => undefined);
 
     await performRemoteLogout({
@@ -331,7 +331,7 @@ describe("storage helpers", () => {
       },
       redirectUri: "myapp://callback",
       openAuthSession,
-      promptOptions: { preferEphemeralSession: true },
+      browserOptions: { preferEphemeralSession: true },
     });
 
     expect(openAuthSession).toHaveBeenCalledWith(

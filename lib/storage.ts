@@ -34,7 +34,7 @@ type RemoteLogoutOptions = {
     redirectUri: string,
     options?: AuthSessionOpenOptions,
   ) => Promise<unknown>;
-  promptOptions?: AuthSessionOpenOptions;
+  browserOptions?: AuthSessionOpenOptions;
 };
 
 const STORAGE_TEST_KEY = "__kinde_storage_test__";
@@ -131,11 +131,11 @@ export const performRemoteLogout = async ({
   discovery,
   redirectUri,
   openAuthSession,
-  promptOptions,
+  browserOptions,
 }: RemoteLogoutOptions): Promise<void> => {
   if (discovery?.endSessionEndpoint) {
     const logoutUrl = new URL(discovery.endSessionEndpoint);
     logoutUrl.searchParams.set("redirect", redirectUri);
-    await openAuthSession(logoutUrl.toString(), redirectUri, promptOptions);
+    await openAuthSession(logoutUrl.toString(), redirectUri, browserOptions);
   }
 };

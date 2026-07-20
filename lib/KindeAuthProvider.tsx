@@ -46,6 +46,7 @@ import {
   LogoutResult,
   PermissionAccess,
   Permissions,
+  KindeBrowserOptions,
 } from "./types";
 import { KindeAuthHook } from "./useKindeAuth";
 import { JWTDecoded, jwtDecoder } from "@kinde/jwt-decoder";
@@ -96,6 +97,25 @@ type SwitchOrgOptions = NonNullable<Parameters<KindeAuthHook["switchOrg"]>[1]>;
 type AuthenticateOptions = Partial<LoginMethodParams> & {
   authTimeoutMs?: number;
   suppressCallbacks?: boolean;
+  browserOptions?: KindeBrowserOptions;
+};
+
+/**
+ * Single boundary that maps Kinde's public browser options onto the underlying
+ * Expo AuthSession/WebBrowser options. Undefined fields are
+ * omitted so the result merges cleanly and stays empty when nothing is set.
+ */
+const toExpoBrowserOptions = (
+  options: KindeBrowserOptions = {},
+): AuthRequestPromptOptions => {
+  const expoOptions: AuthRequestPromptOptions = {};
+  if (options.preferEphemeralSession !== undefined) {
+    expoOptions.preferEphemeralSession = options.preferEphemeralSession;
+  }
+  if (options.showInRecents !== undefined) {
+    expoOptions.showInRecents = options.showInRecents;
+  }
+  return expoOptions;
 };
 
 type EventTypes = {
@@ -130,7 +150,7 @@ type KindeAuthConfig = {
   clientId: string | undefined;
   scopes?: string;
   enhancedSecurity?: boolean;
-  promptOptions?: AuthRequestPromptOptions;
+  browserOptions?: KindeBrowserOptions;
 };
 
 export const KindeAuthProvider = ({
@@ -208,7 +228,12 @@ export const KindeAuthProvider = ({
   const authenticate = async (
     options: AuthenticateOptions = {},
   ): Promise<LoginResponse> => {
-    const { authTimeoutMs, suppressCallbacks, ...loginOptions } = options;
+    const {
+      authTimeoutMs,
+      suppressCallbacks,
+      browserOptions,
+      ...loginOptions
+    } = options;
     const authRedirectUri = loginOptions.redirectURL || redirectUri;
     if (!authRedirectUri) {
       return {
@@ -240,10 +265,11 @@ export const KindeAuthProvider = ({
         {
           authorizationEndpoint: `${domain}/oauth2/auth`,
         } as DiscoveryDocument,
-        {
+        toExpoBrowserOptions({
           showInRecents: true,
-          ...config.promptOptions,
-        },
+          ...config.browserOptions,
+          ...browserOptions,
+        }),
       );
       const codeResponse = authTimeoutMs
         ? await Promise.race([
@@ -392,11 +418,13 @@ export const KindeAuthProvider = ({
    */
   const login = async (
     options: Partial<LoginMethodParams> = {},
+    browserOptions?: KindeBrowserOptions,
   ): Promise<LoginResponse> => {
     const response = await authenticate({
       ...options,
       prompt: PromptTypes.login,
       suppressCallbacks: true,
+      browserOptions,
     });
     await handleLoginResponse(response, AuthEvent.login);
     return response;
@@ -488,11 +516,13 @@ export const KindeAuthProvider = ({
    */
   const register = async (
     options: Partial<LoginMethodParams> = {},
+    browserOptions?: KindeBrowserOptions,
   ): Promise<LoginResponse> => {
     const response = await authenticate({
       ...options,
       prompt: PromptTypes.create,
       suppressCallbacks: true,
+      browserOptions,
     });
     await handleLoginResponse(response, AuthEvent.register);
     return response;
@@ -503,9 +533,10 @@ export const KindeAuthProvider = ({
    * @param {LogoutRequest} options
    * @returns {Promise<LogoutResult>}
    */
-  async function logout({
-    revokeToken: _revokeToken,
-  }: Partial<LogoutRequest> = {}): Promise<LogoutResult> {
+  async function logout(
+    { revokeToken: _revokeToken }: Partial<LogoutRequest> = {},
+    browserOptions?: KindeBrowserOptions,
+  ): Promise<LogoutResult> {
     if (!storage) {
       return Promise.resolve({
         success: false,
@@ -524,7 +555,10 @@ export const KindeAuthProvider = ({
       await performRemoteLogout({
         discovery,
         redirectUri,
-        promptOptions: config.promptOptions,
+        browserOptions: toExpoBrowserOptions({
+          ...config.browserOptions,
+          ...browserOptions,
+        }),
         openAuthSession: async (url, authRedirectUri, options) =>
           openAuthSessionAsync(url, authRedirectUri, options),
       });

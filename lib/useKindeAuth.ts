@@ -6,6 +6,7 @@ import {
   Permissions,
   LogoutRequest,
   UserProfile,
+  KindeBrowserOptions,
 } from "./types";
 import {
   LoginMethodParams,
@@ -19,13 +20,22 @@ import { KindeAuthContext } from "./KindeAuthProvider";
 import { JWTDecoded } from "@kinde/jwt-decoder";
 
 export interface KindeAuthHook {
-  login: (options?: Partial<LoginMethodParams>) => Promise<LoginResponse>;
-  register: (options?: Partial<LoginMethodParams>) => Promise<LoginResponse>;
+  login: (
+    options?: Partial<LoginMethodParams>,
+    browserOptions?: KindeBrowserOptions,
+  ) => Promise<LoginResponse>;
+  register: (
+    options?: Partial<LoginMethodParams>,
+    browserOptions?: KindeBrowserOptions,
+  ) => Promise<LoginResponse>;
   switchOrg: (
     orgCode: OrgCode,
     options?: { redirectURL?: string },
   ) => Promise<LoginResponse>;
-  logout: (options?: Partial<LogoutRequest>) => Promise<LogoutResult>;
+  logout: (
+    options?: Partial<LogoutRequest>,
+    browserOptions?: KindeBrowserOptions,
+  ) => Promise<LogoutResult>;
   portal: (subNav?: PortalPage) => Promise<void>;
   getAccessToken: () => Promise<string | null>;
   getIdToken: () => Promise<string | null>;
