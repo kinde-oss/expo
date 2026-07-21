@@ -31,13 +31,13 @@ importers:
         version: 56.0.12(@babel/core@7.29.7(supports-color@8.1.1))(@expo/dom-webview@56.0.5)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)(typescript@6.0.3)
       expo-auth-session:
         specifier: ^56.0.0
-        version: 56.0.14(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)
+        version: 56.0.15(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)
       expo-crypto:
         specifier: ^56.0.0
         version: 56.0.4(expo@56.0.12)
       expo-linking:
         specifier: ^56.0.0
-        version: 56.0.14(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)
+        version: 56.0.15(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)
       expo-secure-store:
         specifier: ^56.0.0
         version: 56.0.4(expo@56.0.12)
@@ -56,10 +56,10 @@ importers:
         version: 19.2.17
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.32.0
-        version: 8.65.0(@typescript-eslint/parser@8.65.0(eslint@10.6.0)(typescript@6.0.3))(eslint@10.6.0)(typescript@6.0.3)
+        version: 8.65.0(@typescript-eslint/parser@8.65.0(eslint@10.6.0(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.6.0(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       '@typescript-eslint/parser':
         specifier: ^8.32.0
-        version: 8.65.0(eslint@10.6.0)(typescript@6.0.3)
+        version: 8.65.0(eslint@10.6.0(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       '@vitest/coverage-v8':
         specifier: ^4.0.0
         version: 4.1.9(vitest@4.1.9)
@@ -71,7 +71,7 @@ importers:
         version: 7.37.5(eslint@10.6.0(supports-color@8.1.1))
       expo-constants:
         specifier: ^56.0.0
-        version: 56.0.18(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(supports-color@8.1.1)
+        version: 56.0.21(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(supports-color@8.1.1)
       prettier:
         specifier: ^3.2.5
         version: 3.9.3
@@ -536,6 +536,10 @@ packages:
 
   '@expo/env@2.3.0':
     resolution: {integrity: sha512-9HnnIbzwTTdbwSjNLXTk0fPm9ZwMJ7c1/31tsni8HZ8Q62KzYCyspahH+V365vg5J6lr001DzNwBxVWSaYCQLg==}
+    engines: {node: '>=20.12.0'}
+
+  '@expo/env@2.3.1':
+    resolution: {integrity: sha512-JvBdZa5OkTd+dGEtt3fLW9OF6RlIp9SNu9VyMSiWPV5szMDTSAYbX8Uj3cRvZcU1zzaRbqnTSsHk2AE8WXHfxQ==}
     engines: {node: '>=20.12.0'}
 
   '@expo/expo-modules-macros-plugin@0.2.2':
@@ -1734,14 +1738,20 @@ packages:
       react: '*'
       react-native: '*'
 
-  expo-auth-session@56.0.14:
-    resolution: {integrity: sha512-b6URDBKXVWBjHwypnbCPW6A3PrwYyFqzLXtTrrpTGpmDlsxk7xuz6wIA77sBNziz3hMxt11Nu70iY0fJZYT4jA==}
+  expo-auth-session@56.0.15:
+    resolution: {integrity: sha512-vviFyzIkMBkDMuWzU4SnbRq6EIHBOhUdBQIQffPl/DFLOo5k4tUpxj4YmU1viRYZH9XNP6d3R4MU2pW0GCYNWA==}
     peerDependencies:
       react: '*'
       react-native: '*'
 
   expo-constants@56.0.18:
     resolution: {integrity: sha512-8AMtbDGl/WVPnWlmbpGmvcdnNCy9E4PFnwdVwj600vljkMDPSxcAcjw8GVXEPk3PpZ+ngTqsrkltWyj0UKYAxw==}
+    peerDependencies:
+      expo: '*'
+      react-native: '*'
+
+  expo-constants@56.0.21:
+    resolution: {integrity: sha512-q9LkK9tNTW2z/5hXgpwWoCXO1fBrqn4FgwTiLerM9WOu1wtg99NevAtG3BEG8t5Awtub+NsLidiFZzBat45RKw==}
     peerDependencies:
       expo: '*'
       react-native: '*'
@@ -1770,8 +1780,8 @@ packages:
       expo: '*'
       react: '*'
 
-  expo-linking@56.0.14:
-    resolution: {integrity: sha512-IvVQHWC+Cj4fK5qD3iEVYqpU2a4rLW0IpAAlGJ4MH+H1fyZiHh3eN6qg2WmoclOEPfYATSuEa+dQT6wfgVpXlQ==}
+  expo-linking@56.0.15:
+    resolution: {integrity: sha512-V3tkCxHIWO624ayw2L5Nfi0/bPgYy/0MgmoQR7g3FAKF4nyAayK8IhgAInz4MZ5Ao5Bb+5uZWDdUaS4yyEb+Gw==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -4111,6 +4121,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@expo/env@2.3.1(supports-color@8.1.1)':
+    dependencies:
+      chalk: 4.1.2
+      debug: 4.4.3(supports-color@8.1.1)
+      getenv: 2.0.0
+    transitivePeerDependencies:
+      - supports-color
+
   '@expo/expo-modules-macros-plugin@0.2.2': {}
 
   '@expo/fingerprint@0.19.4(supports-color@8.1.1)':
@@ -4648,15 +4666,15 @@ snapshots:
     dependencies:
       '@types/yargs-parser': 21.0.3
 
-  '@typescript-eslint/eslint-plugin@8.65.0(@typescript-eslint/parser@8.65.0(eslint@10.6.0)(typescript@6.0.3))(eslint@10.6.0)(typescript@6.0.3)':
+  '@typescript-eslint/eslint-plugin@8.65.0(@typescript-eslint/parser@8.65.0(eslint@10.6.0(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint@10.6.0(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.65.0(eslint@10.6.0)(typescript@6.0.3)
+      '@typescript-eslint/parser': 8.65.0(eslint@10.6.0(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       '@typescript-eslint/scope-manager': 8.65.0
-      '@typescript-eslint/type-utils': 8.65.0(eslint@10.6.0)(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.65.0(eslint@10.6.0)(typescript@6.0.3)
+      '@typescript-eslint/type-utils': 8.65.0(eslint@10.6.0(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.65.0(eslint@10.6.0(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       '@typescript-eslint/visitor-keys': 8.65.0
-      eslint: 10.6.0
+      eslint: 10.6.0(supports-color@8.1.1)
       ignore: 7.0.6
       natural-compare: 1.4.0
       ts-api-utils: 2.5.0(typescript@6.0.3)
@@ -4664,23 +4682,23 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/parser@8.65.0(eslint@10.6.0)(typescript@6.0.3)':
+  '@typescript-eslint/parser@8.65.0(eslint@10.6.0(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/scope-manager': 8.65.0
       '@typescript-eslint/types': 8.65.0
-      '@typescript-eslint/typescript-estree': 8.65.0(typescript@6.0.3)
+      '@typescript-eslint/typescript-estree': 8.65.0(supports-color@8.1.1)(typescript@6.0.3)
       '@typescript-eslint/visitor-keys': 8.65.0
-      debug: 4.4.3
-      eslint: 10.6.0
+      debug: 4.4.3(supports-color@8.1.1)
+      eslint: 10.6.0(supports-color@8.1.1)
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/project-service@8.65.0(typescript@6.0.3)':
+  '@typescript-eslint/project-service@8.65.0(supports-color@8.1.1)(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/tsconfig-utils': 8.65.0(typescript@6.0.3)
       '@typescript-eslint/types': 8.65.0
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
@@ -4694,13 +4712,13 @@ snapshots:
     dependencies:
       typescript: 6.0.3
 
-  '@typescript-eslint/type-utils@8.65.0(eslint@10.6.0)(typescript@6.0.3)':
+  '@typescript-eslint/type-utils@8.65.0(eslint@10.6.0(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/types': 8.65.0
-      '@typescript-eslint/typescript-estree': 8.65.0(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.65.0(eslint@10.6.0)(typescript@6.0.3)
-      debug: 4.4.3
-      eslint: 10.6.0
+      '@typescript-eslint/typescript-estree': 8.65.0(supports-color@8.1.1)(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.65.0(eslint@10.6.0(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      debug: 4.4.3(supports-color@8.1.1)
+      eslint: 10.6.0(supports-color@8.1.1)
       ts-api-utils: 2.5.0(typescript@6.0.3)
       typescript: 6.0.3
     transitivePeerDependencies:
@@ -4708,13 +4726,13 @@ snapshots:
 
   '@typescript-eslint/types@8.65.0': {}
 
-  '@typescript-eslint/typescript-estree@8.65.0(typescript@6.0.3)':
+  '@typescript-eslint/typescript-estree@8.65.0(supports-color@8.1.1)(typescript@6.0.3)':
     dependencies:
-      '@typescript-eslint/project-service': 8.65.0(typescript@6.0.3)
+      '@typescript-eslint/project-service': 8.65.0(supports-color@8.1.1)(typescript@6.0.3)
       '@typescript-eslint/tsconfig-utils': 8.65.0(typescript@6.0.3)
       '@typescript-eslint/types': 8.65.0
       '@typescript-eslint/visitor-keys': 8.65.0
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       minimatch: 10.2.5
       semver: 7.8.5
       tinyglobby: 0.2.17
@@ -4723,13 +4741,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/utils@8.65.0(eslint@10.6.0)(typescript@6.0.3)':
+  '@typescript-eslint/utils@8.65.0(eslint@10.6.0(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.9.1(eslint@10.6.0)
+      '@eslint-community/eslint-utils': 4.9.1(eslint@10.6.0(supports-color@8.1.1))
       '@typescript-eslint/scope-manager': 8.65.0
       '@typescript-eslint/types': 8.65.0
-      '@typescript-eslint/typescript-estree': 8.65.0(typescript@6.0.3)
-      eslint: 10.6.0
+      '@typescript-eslint/typescript-estree': 8.65.0(supports-color@8.1.1)(typescript@6.0.3)
+      eslint: 10.6.0(supports-color@8.1.1)
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
@@ -5614,12 +5632,12 @@ snapshots:
       - supports-color
       - typescript
 
-  expo-auth-session@56.0.14(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1):
+  expo-auth-session@56.0.15(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1):
     dependencies:
       expo-application: 56.0.3(expo@56.0.12)
-      expo-constants: 56.0.18(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(supports-color@8.1.1)
+      expo-constants: 56.0.21(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(supports-color@8.1.1)
       expo-crypto: 56.0.4(expo@56.0.12)
-      expo-linking: 56.0.14(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)
+      expo-linking: 56.0.15(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)
       expo-web-browser: 56.0.5(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))
       invariant: 2.2.4
       react: 19.2.3
@@ -5631,6 +5649,14 @@ snapshots:
   expo-constants@56.0.18(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(supports-color@8.1.1):
     dependencies:
       '@expo/env': 2.3.0(supports-color@8.1.1)
+      expo: 56.0.12(@babel/core@7.29.7(supports-color@8.1.1))(@expo/dom-webview@56.0.5)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)(typescript@6.0.3)
+      react-native: 0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1)
+    transitivePeerDependencies:
+      - supports-color
+
+  expo-constants@56.0.21(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(supports-color@8.1.1):
+    dependencies:
+      '@expo/env': 2.3.1(supports-color@8.1.1)
       expo: 56.0.12(@babel/core@7.29.7(supports-color@8.1.1))(@expo/dom-webview@56.0.5)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)(typescript@6.0.3)
       react-native: 0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1)
     transitivePeerDependencies:
@@ -5657,9 +5683,9 @@ snapshots:
       expo: 56.0.12(@babel/core@7.29.7(supports-color@8.1.1))(@expo/dom-webview@56.0.5)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)(typescript@6.0.3)
       react: 19.2.3
 
-  expo-linking@56.0.14(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1):
+  expo-linking@56.0.15(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1):
     dependencies:
-      expo-constants: 56.0.18(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(supports-color@8.1.1)
+      expo-constants: 56.0.21(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(supports-color@8.1.1)
       invariant: 2.2.4
       react: 19.2.3
       react-native: 0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1)
