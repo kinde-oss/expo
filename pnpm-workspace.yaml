@@ -1,0 +1,15 @@
+# Approved packages exempted from pnpm's minimum-release-age supply-chain check.
+# @typescript-eslint packages follow a weekly release cadence and are maintained
+# by the TypeScript-ESLint project (Microsoft-backed). These specific versions
+# were approved as part of the expo v57 dependency update.
+minimumReleaseAgeExclude:
+  - "@typescript-eslint/eslint-plugin@8.65.0"
+  - "@typescript-eslint/parser@8.65.0"
+  - "@typescript-eslint/project-service@8.65.0"
+  - "@typescript-eslint/scope-manager@8.65.0"
+  - "@typescript-eslint/tsconfig-utils@8.65.0"
+  - "@typescript-eslint/type-utils@8.65.0"
+  - "@typescript-eslint/types@8.65.0"
+  - "@typescript-eslint/typescript-estree@8.65.0"
+  - "@typescript-eslint/utils@8.65.0"
+  - "@typescript-eslint/visitor-keys@8.65.0"
