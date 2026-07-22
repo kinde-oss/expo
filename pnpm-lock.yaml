@@ -29,21 +29,6 @@ importers:
       expo:
         specifier: ^56.0.0 || ^57.0.0
         version: 56.0.12(@babel/core@7.29.7(supports-color@8.1.1))(@expo/dom-webview@56.0.5)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)(typescript@6.0.3)
-      expo-auth-session:
-        specifier: ^57.0.0
-        version: 57.0.4(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)
-      expo-crypto:
-        specifier: ^57.0.0
-        version: 57.0.1(expo@56.0.12)
-      expo-linking:
-        specifier: ^57.0.0
-        version: 57.0.3(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)
-      expo-secure-store:
-        specifier: ^57.0.0
-        version: 57.0.1(expo@56.0.12)
-      expo-web-browser:
-        specifier: ^57.0.0
-        version: 57.0.1(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))
     devDependencies:
       '@types/base-64':
         specifier: ^1.0.2
@@ -69,9 +54,18 @@ importers:
       eslint-plugin-react:
         specifier: ^7.37.5
         version: 7.37.5(eslint@10.6.0(supports-color@8.1.1))
+      expo-auth-session:
+        specifier: ^57.0.0
+        version: 57.0.4(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)
       expo-constants:
         specifier: ^57.0.0
         version: 57.0.6(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))(supports-color@8.1.1)
+      expo-secure-store:
+        specifier: ^57.0.0
+        version: 57.0.1(expo@56.0.12)
+      expo-web-browser:
+        specifier: ^57.0.0
+        version: 57.0.1(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.2.3)(supports-color@8.1.1))
       prettier:
         specifier: ^3.2.5
         version: 3.9.3
