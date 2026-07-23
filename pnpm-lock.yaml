@@ -16,7 +16,7 @@ importers:
         version: 0.2.0
       '@kinde/jwt-validator':
         specifier: ^0.4.2
-        version: 0.4.2
+        version: 0.4.4
       '@vitejs/plugin-react':
         specifier: ^6.0.1
         version: 6.0.3(babel-plugin-react-compiler@1.0.0)(vite@8.1.5(@types/node@24.13.3)(terser@5.48.0)(yaml@2.9.0))
@@ -707,8 +707,8 @@ packages:
   '@kinde/jwt-decoder@0.2.0':
     resolution: {integrity: sha512-dqtwCmAvywOVLkkUfp4UbqdvVLsK0cvHsJhU3gDY9rgjAdZhGw0vCreBW6j3MFLxbi6cZm7pMU7/O5SJgvN5Rw==}
 
-  '@kinde/jwt-validator@0.4.2':
-    resolution: {integrity: sha512-PMSJX+U9IuwqNh8xke2WYx+mTmUjPUxWvhbCQjgWz9Nt2pLJPVOc9RInBgP2etU8uwqVLBIMJJc0iaDI8kNEkA==}
+  '@kinde/jwt-validator@0.4.4':
+    resolution: {integrity: sha512-g9Cp/JfLRftie/5w8WHz21aI0GtRW2rvPE30fDRfIcdScSQ27Aidkw4oV/cepWvHV2bnifybnx79olgN8U8FRA==}
 
   '@microsoft/api-extractor-model@7.33.8':
     resolution: {integrity: sha512-aIcoQggPyer3B6Ze3usz0YWC/oBwUHfRH5ETUsr+oT2BRA6SfTJl7IKPcPZkX4UR+PohowzW4uMxsvjrn8vm+w==}
@@ -4537,7 +4537,7 @@ snapshots:
 
   '@kinde/jwt-decoder@0.2.0': {}
 
-  '@kinde/jwt-validator@0.4.2':
+  '@kinde/jwt-validator@0.4.4':
     dependencies:
       '@kinde/jwt-decoder': 0.2.0
       jsrsasign: 11.1.3
