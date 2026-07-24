@@ -1,6 +1,5 @@
 import {
   clearInsecureStorage,
-  ExpoSecureStore,
   getInsecureStorage,
   LocalStorage,
   MemoryStorage,
@@ -11,6 +10,7 @@ import {
 } from "@kinde/js-utils";
 import type { DiscoveryDocument } from "expo-auth-session";
 import { maybeCompleteAuthSession } from "expo-web-browser";
+import { ExpoSecureStore } from "./storage/ExpoSecureStore";
 
 type WebWindowLike = {
   localStorage?: {
@@ -19,10 +19,12 @@ type WebWindowLike = {
   };
 };
 
+type ExpoSecureStoreConstructor = new () => SessionManager;
+
 type StorageFactoryOptions = {
   platformOS: string;
   windowObject?: WebWindowLike;
-  loadExpoSecureStore?: typeof ExpoSecureStore.default;
+  loadExpoSecureStore?: () => Promise<ExpoSecureStoreConstructor>;
 };
 
 type RemoteLogoutOptions = {
@@ -32,6 +34,9 @@ type RemoteLogoutOptions = {
 };
 
 const STORAGE_TEST_KEY = "__kinde_storage_test__";
+
+const defaultLoadExpoSecureStore =
+  async (): Promise<ExpoSecureStoreConstructor> => ExpoSecureStore;
 
 export const canUseLocalStorage = (windowObject?: WebWindowLike): boolean => {
   if (!windowObject?.localStorage) {
@@ -64,7 +69,7 @@ const resetInsecureStorage = (): void => {
 export const createSessionStorage = async ({
   platformOS,
   windowObject,
-  loadExpoSecureStore = ExpoSecureStore.default,
+  loadExpoSecureStore = defaultLoadExpoSecureStore,
 }: StorageFactoryOptions): Promise<SessionManager> => {
   resetInsecureStorage();
 

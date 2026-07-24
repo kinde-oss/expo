@@ -204,9 +204,7 @@ describe("storage helpers", () => {
   it("uses the Expo secure store loader on native platforms", async () => {
     class NativeStore extends MemoryStorage {}
 
-    const loadExpoSecureStore = vi.fn(
-      async () => NativeStore,
-    ) as typeof import("@kinde/js-utils").ExpoSecureStore.default;
+    const loadExpoSecureStore = vi.fn(async () => NativeStore);
 
     const storage = await createSessionStorage({
       platformOS: "ios",

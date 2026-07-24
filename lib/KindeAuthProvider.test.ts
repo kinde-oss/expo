@@ -82,7 +82,9 @@ vi.mock("expo-auth-session", () => ({
     constructor(_config: unknown) {}
 
     async promptAsync(...args: unknown[]) {
-      return mocked.promptAsync(...args as Parameters<typeof mocked.promptAsync>);
+      return mocked.promptAsync(
+        ...(args as Parameters<typeof mocked.promptAsync>),
+      );
     }
   },
   exchangeCodeAsync: mocked.exchangeCodeAsync,
@@ -114,21 +116,21 @@ vi.mock("base-64", () => ({
   encode: vi.fn((value: string) => value),
 }));
 
+vi.mock("./storage/ExpoSecureStore", () => ({
+  ExpoSecureStore: vi.fn(
+    class {
+      async getSessionItem() {
+        return null;
+      }
+
+      async removeItems() {}
+
+      async setSessionItem() {}
+    },
+  ),
+}));
+
 vi.mock("@kinde/js-utils", () => ({
-  ExpoSecureStore: {
-    default: vi.fn(
-      async () =>
-        class {
-          async getSessionItem() {
-            return null;
-          }
-
-          async removeItems() {}
-
-          async setSessionItem() {}
-        },
-    ),
-  },
   PortalPage: {
     profile: "profile",
   },
@@ -196,13 +198,11 @@ const createStorage = () => ({
   setSessionItem: vi.fn(async () => undefined),
 });
 
-const createProvider = async (
-  callbacks?: {
-    onError?: ReturnType<typeof vi.fn>;
-    onEvent?: ReturnType<typeof vi.fn>;
-    onSuccess?: ReturnType<typeof vi.fn>;
-  },
-) => {
+const createProvider = async (callbacks?: {
+  onError?: ReturnType<typeof vi.fn>;
+  onEvent?: ReturnType<typeof vi.fn>;
+  onSuccess?: ReturnType<typeof vi.fn>;
+}) => {
   const storage = createStorage();
 
   configureProviderState(storage);
