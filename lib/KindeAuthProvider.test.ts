@@ -319,6 +319,46 @@ describe("KindeAuthProvider Expo SDK 56 migration", () => {
     expect(mocked.setRefreshTimer).not.toHaveBeenCalled();
   });
 
+  it("forwards config.browserOptions to the login auth session", async () => {
+    const storage = {
+      getSessionItem: vi.fn(async () => null),
+      removeSessionItem: vi.fn(async () => undefined),
+      removeItems: vi.fn(async () => undefined),
+      setSessionItem: vi.fn(async () => undefined),
+    };
+
+    configureProviderState(storage);
+
+    const { KindeAuthProvider } = await import("./KindeAuthProvider");
+    const providerElement = KindeAuthProvider({
+      callbacks: undefined,
+      children: null,
+      config: {
+        clientId: "client-id",
+        domain: "https://example.kinde.com",
+        browserOptions: { preferEphemeralSession: true },
+      },
+    });
+
+    const login = (
+      providerElement as {
+        props: { value: { login: (args?: unknown) => Promise<unknown> } };
+      }
+    ).props.value.login;
+
+    await login();
+
+    expect(mocked.promptAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorizationEndpoint: "https://example.kinde.com/oauth2/auth",
+      }),
+      expect.objectContaining({
+        showInRecents: true,
+        preferEphemeralSession: true,
+      }),
+    );
+  });
+
   it("prioritizes Kinde hosted logout when revokeToken is requested", async () => {
     const storage = {
       getSessionItem: vi.fn(async (key: string) =>
@@ -362,6 +402,171 @@ describe("KindeAuthProvider Expo SDK 56 migration", () => {
     expect(mocked.openAuthSessionAsync).toHaveBeenCalledWith(
       expect.any(String),
       "kinde://redirect",
+      {},
+    );
+  });
+
+  it("forwards config.browserOptions to the hosted logout auth session", async () => {
+    const storage = {
+      getSessionItem: vi.fn(async (key: string) =>
+        key === "access_token" ? "access-token" : null,
+      ),
+      removeSessionItem: vi.fn(async () => undefined),
+      removeItems: vi.fn(async () => undefined),
+      setSessionItem: vi.fn(async () => undefined),
+    };
+
+    configureProviderState(storage);
+
+    const { KindeAuthProvider } = await import("./KindeAuthProvider");
+    const providerElement = KindeAuthProvider({
+      callbacks: undefined,
+      children: null,
+      config: {
+        clientId: "client-id",
+        domain: "https://example.kinde.com",
+        browserOptions: { preferEphemeralSession: true },
+      },
+    });
+
+    const logout = (
+      providerElement as {
+        props: {
+          value: {
+            logout: (args?: unknown) => Promise<unknown>;
+          };
+        };
+      }
+    ).props.value.logout;
+
+    await logout();
+
+    expect(mocked.openAuthSessionAsync).toHaveBeenCalledWith(
+      expect.any(String),
+      "kinde://redirect",
+      { preferEphemeralSession: true },
+    );
+  });
+
+  it("lets a per-call browserOptions override the login default", async () => {
+    const storage = createStorage();
+
+    configureProviderState(storage);
+
+    const { KindeAuthProvider } = await import("./KindeAuthProvider");
+    const providerElement = KindeAuthProvider({
+      callbacks: undefined,
+      children: null,
+      config: {
+        clientId: "client-id",
+        domain: "https://example.kinde.com",
+        browserOptions: { preferEphemeralSession: false },
+      },
+    });
+
+    const login = (
+      providerElement as {
+        props: {
+          value: {
+            login: (
+              options?: unknown,
+              browserOptions?: unknown,
+            ) => Promise<unknown>;
+          };
+        };
+      }
+    ).props.value.login;
+
+    await login({}, { preferEphemeralSession: true });
+
+    expect(mocked.promptAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorizationEndpoint: "https://example.kinde.com/oauth2/auth",
+      }),
+      expect.objectContaining({ preferEphemeralSession: true }),
+    );
+  });
+
+  it("forwards a per-call browserOptions from register", async () => {
+    const storage = createStorage();
+
+    configureProviderState(storage);
+
+    const { KindeAuthProvider } = await import("./KindeAuthProvider");
+    const providerElement = KindeAuthProvider({
+      callbacks: undefined,
+      children: null,
+      config: {
+        clientId: "client-id",
+        domain: "https://example.kinde.com",
+      },
+    });
+
+    const register = (
+      providerElement as {
+        props: {
+          value: {
+            register: (
+              options?: unknown,
+              browserOptions?: unknown,
+            ) => Promise<unknown>;
+          };
+        };
+      }
+    ).props.value.register;
+
+    await register({}, { preferEphemeralSession: true });
+
+    expect(mocked.promptAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorizationEndpoint: "https://example.kinde.com/oauth2/auth",
+      }),
+      expect.objectContaining({ preferEphemeralSession: true }),
+    );
+  });
+
+  it("lets a per-call browserOptions override the logout default", async () => {
+    const storage = {
+      getSessionItem: vi.fn(async (key: string) =>
+        key === "access_token" ? "access-token" : null,
+      ),
+      removeSessionItem: vi.fn(async () => undefined),
+      removeItems: vi.fn(async () => undefined),
+      setSessionItem: vi.fn(async () => undefined),
+    };
+
+    configureProviderState(storage);
+
+    const { KindeAuthProvider } = await import("./KindeAuthProvider");
+    const providerElement = KindeAuthProvider({
+      callbacks: undefined,
+      children: null,
+      config: {
+        clientId: "client-id",
+        domain: "https://example.kinde.com",
+        browserOptions: { preferEphemeralSession: false },
+      },
+    });
+
+    const logout = (
+      providerElement as {
+        props: {
+          value: {
+            logout: (
+              options?: unknown,
+              browserOptions?: unknown,
+            ) => Promise<unknown>;
+          };
+        };
+      }
+    ).props.value.logout;
+
+    await logout({}, { preferEphemeralSession: true });
+
+    expect(mocked.openAuthSessionAsync).toHaveBeenCalledWith(
+      expect.any(String),
+      "kinde://redirect",
+      { preferEphemeralSession: true },
     );
   });
 });

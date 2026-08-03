@@ -256,6 +256,7 @@ describe("storage helpers", () => {
     expect(openAuthSession).toHaveBeenCalledWith(
       expect.any(String),
       "myapp://callback",
+      undefined,
     );
   });
 
@@ -279,6 +280,7 @@ describe("storage helpers", () => {
     expect(openAuthSession).toHaveBeenCalledWith(
       expect.any(String),
       "myapp://callback?mode=web&return=/home",
+      undefined,
     );
   });
 
@@ -302,6 +304,7 @@ describe("storage helpers", () => {
     expect(openAuthSession).toHaveBeenCalledWith(
       expect.any(String),
       "myapp://callback",
+      undefined,
     );
   });
 
@@ -315,5 +318,24 @@ describe("storage helpers", () => {
     });
 
     expect(openAuthSession).not.toHaveBeenCalled();
+  });
+
+  it("forwards browser options to the auth session (e.g. preferEphemeralSession)", async () => {
+    const openAuthSession = vi.fn(async () => undefined);
+
+    await performRemoteLogout({
+      discovery: {
+        endSessionEndpoint: "https://example.kinde.com/logout",
+      },
+      redirectUri: "myapp://callback",
+      openAuthSession,
+      browserOptions: { preferEphemeralSession: true },
+    });
+
+    expect(openAuthSession).toHaveBeenCalledWith(
+      expect.any(String),
+      "myapp://callback",
+      { preferEphemeralSession: true },
+    );
   });
 });
