@@ -56,14 +56,14 @@
     "expo-web-browser": "^57.0.0",
     "prettier": "^3.2.5",
     "react": "^19.0.0",
-    "react-native": "0.86.0",
+    "react-native": "0.86.2",
     "typescript": "^6.0.3",
     "vite": "^8.0.3",
     "vite-plugin-dts": "^5.0.0",
     "vitest": "^4.0.0"
   },
   "dependencies": {
-    "@kinde/js-utils": "0.31.0",
+    "@kinde/js-utils": "0.32.0",
     "@kinde/jwt-decoder": "^0.2.0",
     "@kinde/jwt-validator": "^0.4.2",
     "@vitejs/plugin-react": "^6.0.1",
@@ -80,5 +80,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "packageManager": "pnpm@11.15.1+sha512.81350b07e53c9538a02f1f2303b4290fa2d7be04e56e2a970c4cc4b417dc761de196edabd49d55c7dc9580db81007c44143e4e3d7e462b3000d23c255122d065"
+  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee"
 }
