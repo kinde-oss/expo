@@ -74,6 +74,12 @@ export class ExpoSecureStore<
         expoSecureStore!.setItemAsync(
           `${storageSettings.keyPrefix}${itemKey}${index}`,
           splitValue,
+          {
+            // iOS: tokens must stay readable when the device is locked (e.g.
+            // a refresh firing right after lock), which the default
+            // WHEN_UNLOCKED accessibility forbids.
+            keychainAccessible: expoSecureStore!.AFTER_FIRST_UNLOCK,
+          },
         ),
       ),
     );

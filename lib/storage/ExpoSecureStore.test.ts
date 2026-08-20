@@ -6,6 +6,7 @@ vi.mock("expo-secure-store", () => ({
   setItemAsync: vi.fn(),
   getItemAsync: vi.fn(),
   deleteItemAsync: vi.fn(),
+  AFTER_FIRST_UNLOCK: "AFTER_FIRST_UNLOCK",
 }));
 
 import * as SecureStore from "expo-secure-store";
@@ -32,6 +33,7 @@ describe("ExpoSecureStore", () => {
     expect(mockedSecureStore.setItemAsync).toHaveBeenCalledWith(
       `${storageSettings.keyPrefix}${StorageKeys.accessToken}0`,
       token,
+      { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK },
     );
   });
 
@@ -103,11 +105,13 @@ describe("ExpoSecureStore", () => {
       1,
       `${storageSettings.keyPrefix}${StorageKeys.accessToken}0`,
       "a".repeat(chunkSize),
+      { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK },
     );
     expect(mockedSecureStore.setItemAsync).toHaveBeenNthCalledWith(
       2,
       `${storageSettings.keyPrefix}${StorageKeys.accessToken}1`,
       "a",
+      { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK },
     );
   });
 
