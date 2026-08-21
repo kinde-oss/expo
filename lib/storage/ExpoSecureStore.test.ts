@@ -155,4 +155,22 @@ describe("ExpoSecureStore", () => {
     expect(mockedSecureStore.deleteItemAsync).not.toHaveBeenCalled();
     expect(mockedSecureStore.setItemAsync).not.toHaveBeenCalled();
   });
+
+  it("fails closed when a later chunk is unreadable during cleanup", async () => {
+    const store = new ExpoSecureStore();
+
+    // Chunk 0 reads fine, then the keychain locks before chunk 1. Nothing may
+    // be deleted, or the surviving value would be missing its first chunk and
+    // leave stale chunks behind for the next write to glue onto.
+    mockedSecureStore.getItemAsync
+      .mockResolvedValueOnce("chunk-0")
+      .mockRejectedValueOnce(new Error("User interaction is not allowed."));
+
+    await expect(
+      store.setSessionItem(StorageKeys.accessToken, "new-token"),
+    ).rejects.toThrow("User interaction is not allowed.");
+
+    expect(mockedSecureStore.deleteItemAsync).not.toHaveBeenCalled();
+    expect(mockedSecureStore.setItemAsync).not.toHaveBeenCalled();
+  });
 });

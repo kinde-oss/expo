@@ -124,19 +124,20 @@ export class ExpoSecureStore<
   async removeSessionItem(itemKey: V | StorageKeys): Promise<void> {
     await waitForExpoSecureStore();
 
-    let index = 0;
+    // Count every chunk before deleting any, so a read failure part-way
+    // through (e.g. the keychain locking) leaves the stored value whole
+    // instead of stripped of its leading chunks.
+    let count = 0;
+    while (
+      (await expoSecureStore!.getItemAsync(
+        `${storageSettings.keyPrefix}${String(itemKey)}${count}`,
+      )) !== null
+    ) {
+      count++;
+    }
 
-    let chunk = await expoSecureStore!.getItemAsync(
-      `${storageSettings.keyPrefix}${String(itemKey)}${index}`,
-    );
-
-    while (chunk !== null) {
+    for (let index = 0; index < count; index++) {
       await expoSecureStore!.deleteItemAsync(
-        `${storageSettings.keyPrefix}${String(itemKey)}${index}`,
-      );
-      index++;
-
-      chunk = await expoSecureStore!.getItemAsync(
         `${storageSettings.keyPrefix}${String(itemKey)}${index}`,
       );
     }
