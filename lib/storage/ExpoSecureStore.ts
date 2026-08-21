@@ -74,6 +74,15 @@ export class ExpoSecureStore<
         expoSecureStore!.setItemAsync(
           `${storageSettings.keyPrefix}${itemKey}${index}`,
           splitValue,
+          {
+            // iOS: tokens must stay readable when the device is locked (e.g.
+            // a refresh firing right after lock), which the default
+            // WHEN_UNLOCKED accessibility forbids. THIS_DEVICE_ONLY keeps
+            // them out of backups so a restore onto another device never
+            // carries a live refresh token with it.
+            keychainAccessible:
+              expoSecureStore!.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
+          },
         ),
       ),
     );
@@ -115,19 +124,20 @@ export class ExpoSecureStore<
   async removeSessionItem(itemKey: V | StorageKeys): Promise<void> {
     await waitForExpoSecureStore();
 
-    let index = 0;
+    // Count every chunk before deleting any, so a read failure part-way
+    // through (e.g. the keychain locking) leaves the stored value whole
+    // instead of stripped of its leading chunks.
+    let count = 0;
+    while (
+      (await expoSecureStore!.getItemAsync(
+        `${storageSettings.keyPrefix}${String(itemKey)}${count}`,
+      )) !== null
+    ) {
+      count++;
+    }
 
-    let chunk = await expoSecureStore!.getItemAsync(
-      `${storageSettings.keyPrefix}${String(itemKey)}${index}`,
-    );
-
-    while (chunk !== null) {
+    for (let index = 0; index < count; index++) {
       await expoSecureStore!.deleteItemAsync(
-        `${storageSettings.keyPrefix}${String(itemKey)}${index}`,
-      );
-      index++;
-
-      chunk = await expoSecureStore!.getItemAsync(
         `${storageSettings.keyPrefix}${String(itemKey)}${index}`,
       );
     }

@@ -6,6 +6,7 @@ vi.mock("expo-secure-store", () => ({
   setItemAsync: vi.fn(),
   getItemAsync: vi.fn(),
   deleteItemAsync: vi.fn(),
+  AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY: "AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY",
 }));
 
 import * as SecureStore from "expo-secure-store";
@@ -32,6 +33,7 @@ describe("ExpoSecureStore", () => {
     expect(mockedSecureStore.setItemAsync).toHaveBeenCalledWith(
       `${storageSettings.keyPrefix}${StorageKeys.accessToken}0`,
       token,
+      { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY },
     );
   });
 
@@ -103,11 +105,13 @@ describe("ExpoSecureStore", () => {
       1,
       `${storageSettings.keyPrefix}${StorageKeys.accessToken}0`,
       "a".repeat(chunkSize),
+      { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY },
     );
     expect(mockedSecureStore.setItemAsync).toHaveBeenNthCalledWith(
       2,
       `${storageSettings.keyPrefix}${StorageKeys.accessToken}1`,
       "a",
+      { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY },
     );
   });
 
@@ -132,5 +136,41 @@ describe("ExpoSecureStore", () => {
     await store.removeSessionItem(StorageKeys.accessToken);
 
     expect(mockedSecureStore.deleteItemAsync).toHaveBeenCalledTimes(3);
+  });
+
+  it("fails closed when the keychain is unreadable during cleanup", async () => {
+    const store = new ExpoSecureStore();
+
+    // Simulates iOS refusing to read a WHEN_UNLOCKED item while the device is
+    // locked. The cleanup read must propagate so no chunk is deleted or
+    // overwritten, leaving the existing token intact.
+    mockedSecureStore.getItemAsync.mockRejectedValueOnce(
+      new Error("User interaction is not allowed."),
+    );
+
+    await expect(
+      store.setSessionItem(StorageKeys.accessToken, "new-token"),
+    ).rejects.toThrow("User interaction is not allowed.");
+
+    expect(mockedSecureStore.deleteItemAsync).not.toHaveBeenCalled();
+    expect(mockedSecureStore.setItemAsync).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when a later chunk is unreadable during cleanup", async () => {
+    const store = new ExpoSecureStore();
+
+    // Chunk 0 reads fine, then the keychain locks before chunk 1. Nothing may
+    // be deleted, or the surviving value would be missing its first chunk and
+    // leave stale chunks behind for the next write to glue onto.
+    mockedSecureStore.getItemAsync
+      .mockResolvedValueOnce("chunk-0")
+      .mockRejectedValueOnce(new Error("User interaction is not allowed."));
+
+    await expect(
+      store.setSessionItem(StorageKeys.accessToken, "new-token"),
+    ).rejects.toThrow("User interaction is not allowed.");
+
+    expect(mockedSecureStore.deleteItemAsync).not.toHaveBeenCalled();
+    expect(mockedSecureStore.setItemAsync).not.toHaveBeenCalled();
   });
 });
