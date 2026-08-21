@@ -77,8 +77,11 @@ export class ExpoSecureStore<
           {
             // iOS: tokens must stay readable when the device is locked (e.g.
             // a refresh firing right after lock), which the default
-            // WHEN_UNLOCKED accessibility forbids.
-            keychainAccessible: expoSecureStore!.AFTER_FIRST_UNLOCK,
+            // WHEN_UNLOCKED accessibility forbids. THIS_DEVICE_ONLY keeps
+            // them out of backups so a restore onto another device never
+            // carries a live refresh token with it.
+            keychainAccessible:
+              expoSecureStore!.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
           },
         ),
       ),
