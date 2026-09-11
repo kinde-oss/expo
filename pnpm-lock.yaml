@@ -83,7 +83,7 @@ importers:
         version: 8.2.2(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)
       vite-plugin-dts:
         specifier: ^5.0.0
-        version: 5.0.3(rolldown@1.2.5)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
+        version: 5.1.0(rolldown@1.2.5)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
       vitest:
         specifier: ^4.0.0
         version: 4.1.11(@types/node@24.13.3)(@vitest/coverage-v8@4.1.11)(vite@8.2.2(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
@@ -1372,8 +1372,8 @@ packages:
   confbox@0.1.8:
     resolution: {integrity: sha512-RMtmw0iFkeR4YV+fUOSucriAQNb9g8zFR52MWCtl+cCZOFRNL6zeB395vPzFhEjjn4fMxXudmELnl/KF/WrK6w==}
 
-  confbox@0.2.4:
-    resolution: {integrity: sha512-ysOGlgTFbN2/Y6Cg3Iye8YKulHw+R2fNXHrgSmXISQdMnomY6eNDprVdW9R5xBguEqI954+S6709UyiO7B+6OQ==}
+  confbox@0.3.1:
+    resolution: {integrity: sha512-cKUSoKa8YxFZZSmraVi7onONx3amu77ngK3kGpsYHDH7drPwCRkQE1RYMPlLRrMtnciRj274XNRxcHxnKmDSnA==}
 
   connect@3.7.0:
     resolution: {integrity: sha512-ZqRXc+tZukToSNmh5C2iWMSoV3X1YUcPbqEM4DkEG5tNQXrQUZCNVGGv3IuicnkMtPfGf3Xtp8WCXs295iQ1pQ==}
@@ -1840,6 +1840,9 @@ packages:
   glob-parent@6.0.2:
     resolution: {integrity: sha512-XxwI8EOhVQgWp6iDL+3b0r86f4d6AX6zSU55HfB4ydCEuXLXc5FcYeOu+nnGftS4TEju/11rt4KJPTMgbfmv4A==}
     engines: {node: '>=10.13.0'}
+
+  glob-to-regexp@0.4.1:
+    resolution: {integrity: sha512-lkX1HJXwyMcprw/5YUZc2s7DrpAiHB21/V+E1rHUrVNokkvB6bqMzT0VfV6/86ZNabt1k14YOIaT7nDvOX3Iiw==}
 
   glob@13.0.6:
     resolution: {integrity: sha512-Wjlyrolmm8uDpm/ogGyXZXb1Z+Ca2B8NbJwqBVg0axK9GbBeoS7yGV6vjXnYdGm6X53iehEuxxbyiKp8QmN4Vw==}
@@ -2647,8 +2650,8 @@ packages:
   pkg-types@1.3.1:
     resolution: {integrity: sha512-/Jm5M4RvtBFVkKWRu2BLUTNP8/M2a+UwuAX+ae4770q1qVGtfjG+WTCupoZixokjmHiry8uI+dlY8KXYV5HVVQ==}
 
-  pkg-types@2.3.1:
-    resolution: {integrity: sha512-y+ichcgc2LrADuhLNAx8DFjVfgz91pRxfZdI3UDhxHvcVEZsenLO+7XaU5vOp0u/7V/wZ+plyuQxtrDlZJ+yeg==}
+  pkg-types@2.3.3:
+    resolution: {integrity: sha512-j/lCFdcppV0JxWpCEITdbDltBxPP6cHT+yNJ6Go2OgoSA9518X847X9z0p6LtA4Nc16+eQzCZjRrWanTGvHJ5w==}
 
   plist@3.1.1:
     resolution: {integrity: sha512-ZIfcLJC+7E7FBFnDxm9MPmt7D+DidyQ26lewieO75AdhA2ayMtsJSES0iWzqJQbcVRSrTufQoy0DR94xHue0oA==}
@@ -3108,8 +3111,8 @@ packages:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
     engines: {node: '>= 0.8'}
 
-  unplugin-dts@1.0.3:
-    resolution: {integrity: sha512-/GR887wfG4r1cWyt1UZsLRuMIjsmEbGkS9yJrz+0dsToHAYUD5CTyP3JMGVLv25j9K0mJcwAVvZno/aTuSUvNg==}
+  unplugin-dts@1.1.0:
+    resolution: {integrity: sha512-KZJ+qk+lmd9dJY/PJvDRFL9BUtVubKDiX7Ai/X6mlkCArcQNzwmupKjVqHbRA42uqO5ZfFRFc+o8/OCbQ1GonQ==}
     peerDependencies:
       '@microsoft/api-extractor': '>=7'
       '@rspack/core': ^1
@@ -3168,8 +3171,8 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
-  vite-plugin-dts@5.0.3:
-    resolution: {integrity: sha512-gIth6NdCEHWPiiRMCK3N6C8WjvdsrtEQrmsiG8h6Ov+lFP+b07Y+wcs9H0H7n146l0PDTYK4cQN1vgeG1pMdRQ==}
+  vite-plugin-dts@5.1.0:
+    resolution: {integrity: sha512-MfLc2G+mXPUDGGxpHQeYbdunavFP9UpT9yxiAsTgUXRxfEd3HqysSAM4E72jhz5eIz3OOexCHkqiVlQq8ok9/A==}
     peerDependencies:
       '@microsoft/api-extractor': '>=7'
       rollup: '>=3'
@@ -3269,8 +3272,8 @@ packages:
   vlq@1.0.1:
     resolution: {integrity: sha512-gQpnTgkubC6hQgdIcRdYGDSDc+SaujOdyesZQMv6JlfQee/9Mp0Qhnys6WxDWvQnL5WZdT7o2Ul187aSt0Rq+w==}
 
-  vscode-uri@3.1.0:
-    resolution: {integrity: sha512-/BpdSx+yCQGnCvecbyXdxHDkuk55/G3xwnC0GqY4gmQ3j+A+g8kzzgB4Nk/SINjqn6+waqw3EgbVF2QKExkRxQ==}
+  vscode-uri@3.2.0:
+    resolution: {integrity: sha512-m2gXo3bn0G1kT9InzMf07fTbqMbGtyckj3bH5ktLO+1Ssv+yiATZ4dhwaQv9UZWxJh6E9IFGnQyjgWVDWVBDrg==}
 
   walker@1.0.8:
     resolution: {integrity: sha512-ts/8E8l5b7kY0vlWLewOkDXMmPdLcVV4GmOQLyxuSswIJsweeFZtAsMF7k1Nszz+TYBQrlYRmzOnr398y1JemQ==}
@@ -3922,7 +3925,7 @@ snapshots:
       node-forge: 1.4.0
       npm-package-arg: 11.0.3
       ora: 3.4.0
-      picomatch: 4.0.5
+      picomatch: 4.0.7
       pretty-format: 29.7.0
       progress: 2.0.3
       prompts: 2.4.2
@@ -4103,7 +4106,7 @@ snapshots:
       hermes-parser: 0.36.1
       jsc-safe-url: 0.2.4
       lightningcss: 1.33.0
-      picomatch: 4.0.5
+      picomatch: 4.0.7
       postcss: 8.5.26
       resolve-from: 5.0.0
     optionalDependencies:
@@ -4457,7 +4460,7 @@ snapshots:
     dependencies:
       '@types/estree': 1.0.9
       estree-walker: 2.0.2
-      picomatch: 4.0.5
+      picomatch: 4.0.7
 
   '@sinclair/typebox@0.27.12': {}
 
@@ -4667,7 +4670,7 @@ snapshots:
     dependencies:
       '@volar/language-core': 2.4.28
       path-browserify: 1.0.1
-      vscode-uri: 3.1.0
+      vscode-uri: 3.2.0
     optionalDependencies:
       typescript: 6.0.3
 
@@ -5055,7 +5058,7 @@ snapshots:
 
   confbox@0.1.8: {}
 
-  confbox@0.2.4: {}
+  confbox@0.3.1: {}
 
   connect@3.7.0(supports-color@8.1.1):
     dependencies:
@@ -5646,6 +5649,8 @@ snapshots:
     dependencies:
       is-glob: 4.0.3
 
+  glob-to-regexp@0.4.1: {}
+
   glob@13.0.6:
     dependencies:
       minimatch: 10.2.6
@@ -6028,7 +6033,7 @@ snapshots:
   local-pkg@1.2.1:
     dependencies:
       mlly: 1.8.2
-      pkg-types: 2.3.1
+      pkg-types: 2.3.3
       quansync: 0.2.11
 
   locate-path@6.0.0:
@@ -6639,9 +6644,9 @@ snapshots:
       mlly: 1.8.2
       pathe: 2.0.3
 
-  pkg-types@2.3.1:
+  pkg-types@2.3.3:
     dependencies:
-      confbox: 0.2.4
+      confbox: 0.3.1
       exsolve: 1.1.1
       pathe: 2.0.3
 
@@ -7200,12 +7205,13 @@ snapshots:
 
   unpipe@1.0.0: {}
 
-  unplugin-dts@1.0.3(rolldown@1.2.5)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)):
+  unplugin-dts@1.1.0(rolldown@1.2.5)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)):
     dependencies:
       '@rollup/pluginutils': 5.4.0
       '@volar/typescript': 2.4.28(typescript@6.0.3)
       compare-versions: 6.1.1
       debug: 4.4.3(supports-color@8.1.1)
+      glob-to-regexp: 0.4.1
       kolorist: 1.8.0
       local-pkg: 1.2.1
       magic-string: 0.30.21
@@ -7221,7 +7227,7 @@ snapshots:
     dependencies:
       '@jridgewell/remapping': 2.3.5
       acorn: 8.18.0
-      picomatch: 4.0.5
+      picomatch: 4.0.7
       webpack-virtual-modules: 0.6.2
 
   update-browserslist-db@1.3.1(browserslist@4.28.8):
@@ -7242,9 +7248,9 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vite-plugin-dts@5.0.3(rolldown@1.2.5)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)):
+  vite-plugin-dts@5.1.0(rolldown@1.2.5)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)):
     dependencies:
-      unplugin-dts: 1.0.3(rolldown@1.2.5)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
+      unplugin-dts: 1.1.0(rolldown@1.2.5)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
     optionalDependencies:
       vite: 8.2.2(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)
     transitivePeerDependencies:
@@ -7299,7 +7305,7 @@ snapshots:
 
   vlq@1.0.1: {}
 
-  vscode-uri@3.1.0: {}
+  vscode-uri@3.2.0: {}
 
   walker@1.0.8:
     dependencies:
