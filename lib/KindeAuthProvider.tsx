@@ -30,6 +30,8 @@ import {
   DiscoveryDocument,
   exchangeCodeAsync,
   makeRedirectUri,
+  revokeAsync,
+  TokenTypeHint,
 } from "expo-auth-session";
 import { openAuthSessionAsync, openBrowserAsync } from "expo-web-browser";
 import {
@@ -58,6 +60,7 @@ import {
   createSessionStorage,
   performRemoteLogout,
   persistRefreshToken,
+  getPersistedRefreshToken,
 } from "./storage";
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
@@ -534,7 +537,7 @@ export const KindeAuthProvider = ({
    * @returns {Promise<LogoutResult>}
    */
   async function logout(
-    { revokeToken: _revokeToken }: Partial<LogoutRequest> = {},
+    { revokeToken }: Partial<LogoutRequest> = {},
     browserOptions?: KindeBrowserOptions,
   ): Promise<LogoutResult> {
     if (!storage) {
@@ -551,6 +554,55 @@ export const KindeAuthProvider = ({
 
     let success = true;
 
+    if (revokeToken && discovery?.revocationEndpoint) {
+      try {
+        const currentAccess = await getAccessToken();
+        const currentRefresh = await getPersistedRefreshToken(storage);
+
+        const revokePromises = [];
+
+        if (currentAccess) {
+          revokePromises.push(
+            revokeAsync(
+              {
+                clientId: config.clientId,
+                token: currentAccess,
+                tokenTypeHint: TokenTypeHint.AccessToken,
+              },
+              discovery,
+            ),
+          );
+        }
+
+        if (currentRefresh) {
+          revokePromises.push(
+            revokeAsync(
+              {
+                clientId: config.clientId,
+                token: currentRefresh,
+                tokenTypeHint: TokenTypeHint.RefreshToken,
+              },
+              discovery,
+            ),
+          );
+        }
+
+        if (revokePromises.length > 0) {
+          await Promise.allSettled(revokePromises);
+        }
+      } catch (err: unknown) {
+        console.error(err);
+        success = false;
+      }
+    }
+
+    try {
+      await cleanup();
+    } catch (err: unknown) {
+      console.error(err);
+      success = false;
+    }
+
     try {
       await performRemoteLogout({
         discovery,
@@ -562,13 +614,6 @@ export const KindeAuthProvider = ({
         openAuthSession: async (url, authRedirectUri, options) =>
           openAuthSessionAsync(url, authRedirectUri, options),
       });
-    } catch (err: unknown) {
-      console.error(err);
-      success = false;
-    }
-
-    try {
-      await cleanup();
     } catch (err: unknown) {
       console.error(err);
       success = false;
