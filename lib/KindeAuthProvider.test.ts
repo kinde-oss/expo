@@ -53,6 +53,7 @@ const mocked = vi.hoisted(() => ({
   })),
   removeSessionItem: vi.fn(async () => undefined),
   refreshToken: vi.fn(async () => ({ success: false })),
+  revokeAsync: vi.fn(async () => true),
   setInsecureStorage: vi.fn(),
   setRefreshTimer: vi.fn(),
   storageSettings: { useInsecureForRefreshToken: false },
@@ -89,6 +90,11 @@ vi.mock("expo-auth-session", () => ({
   },
   exchangeCodeAsync: mocked.exchangeCodeAsync,
   makeRedirectUri: mocked.makeRedirectUri,
+  revokeAsync: mocked.revokeAsync,
+  TokenTypeHint: {
+    AccessToken: "access_token",
+    RefreshToken: "refresh_token",
+  },
 }));
 
 vi.mock("expo-web-browser", () => ({
@@ -359,11 +365,13 @@ describe("KindeAuthProvider Expo SDK 56 migration", () => {
     );
   });
 
-  it("prioritizes Kinde hosted logout when revokeToken is requested", async () => {
+  it("revokes tokens and performs hosted logout when revokeToken is requested", async () => {
     const storage = {
-      getSessionItem: vi.fn(async (key: string) =>
-        key === "access_token" ? "access-token" : null,
-      ),
+      getSessionItem: vi.fn(async (key: string) => {
+        if (key === "access_token") return "access-token";
+        if (key === "refresh_token") return "refresh-token";
+        return null;
+      }),
       removeSessionItem: vi.fn(async () => undefined),
       removeItems: vi.fn(async () => undefined),
       setSessionItem: vi.fn(async () => undefined),
@@ -395,6 +403,26 @@ describe("KindeAuthProvider Expo SDK 56 migration", () => {
 
     const logoutUrl = new URL(mocked.openAuthSessionAsync.mock.calls[0][0]);
 
+    // Verify token revocation was called for both access and refresh tokens
+    expect(mocked.revokeAsync).toHaveBeenCalledTimes(2);
+    expect(mocked.revokeAsync).toHaveBeenCalledWith(
+      {
+        clientId: "client-id",
+        token: "access-token",
+        tokenTypeHint: "access_token",
+      },
+      expect.any(Object),
+    );
+    expect(mocked.revokeAsync).toHaveBeenCalledWith(
+      {
+        clientId: "client-id",
+        token: "refresh-token",
+        tokenTypeHint: "refresh_token",
+      },
+      expect.any(Object),
+    );
+
+    // Verify hosted logout was still called correctly
     expect(logoutUrl.origin + logoutUrl.pathname).toBe(
       "https://example.kinde.com/logout",
     );
