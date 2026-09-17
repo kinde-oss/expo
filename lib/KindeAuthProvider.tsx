@@ -169,8 +169,8 @@ export const KindeAuthProvider = ({
     throw new Error("KindeAuthProvider config.domain prop is undefined");
   }
 
-  const domain = config.domain.startsWith("http://")
-    ? config.domain.replace("http://", "https://")
+  const domain = config.domain.toLowerCase().startsWith("http://")
+    ? "https://" + config.domain.substring(7) // 7 is the length of "http://"
     : config.domain;
 
   const clientId = config.clientId;
@@ -356,10 +356,6 @@ export const KindeAuthProvider = ({
           }
         }
         await persistRefreshToken(storage, exchangeCodeResponse.refreshToken);
-
-        // TEMPORARY FOR TESTING
-        console.log("=== ALIVE ACCESS TOKEN ===", exchangeCodeResponse.accessToken);
-        console.log("=== ALIVE REFRESH TOKEN ===", exchangeCodeResponse.refreshToken);
 
         if (exchangeCodeResponse.refreshToken) {
           setRefreshTimer(exchangeCodeResponse.expiresIn || 60, async () => {
