@@ -132,6 +132,21 @@ export const clearPersistedRefreshToken = async (
   }
 };
 
+export const getPersistedRefreshToken = async (
+  storage: SessionManager,
+): Promise<string | null> => {
+  const insecureStorage = getInsecureStorage();
+  if (storageSettings.useInsecureForRefreshToken && insecureStorage) {
+    const token = await insecureStorage.getSessionItem(
+      StorageKeys.refreshToken,
+    );
+    return typeof token === "string" ? token : null;
+  }
+
+  const token = await storage.getSessionItem(StorageKeys.refreshToken);
+  return typeof token === "string" ? token : null;
+};
+
 export const performRemoteLogout = async ({
   discovery,
   redirectUri,
