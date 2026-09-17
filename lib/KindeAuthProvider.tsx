@@ -567,10 +567,6 @@ export const KindeAuthProvider = ({
         const currentAccess = await getAccessToken();
         const currentRefresh = await getPersistedRefreshToken(storage);
 
-        // TEMPORARY FOR TESTING
-        console.log("=== CAPTURED ACCESS TOKEN ===", currentAccess);
-        console.log("=== CAPTURED REFRESH TOKEN ===", currentRefresh);
-
         const revokePromises = [];
 
         if (currentAccess) {
@@ -600,7 +596,13 @@ export const KindeAuthProvider = ({
         }
 
         if (revokePromises.length > 0) {
-          await Promise.allSettled(revokePromises);
+          const results = await Promise.allSettled(revokePromises);
+          for (const result of results) {
+            if (result.status === "rejected") {
+              console.error("Token revocation failed:", result.reason);
+              success = false;
+            }
+          }
         }
       } catch (err: unknown) {
         console.error(err);
