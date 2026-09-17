@@ -560,8 +560,24 @@ export const KindeAuthProvider = ({
 
     if (revokeToken && discovery?.revocationEndpoint) {
       try {
-        const currentAccess = await getAccessToken();
-        const currentRefresh = await getPersistedRefreshToken(storage);
+        const [accessResult, refreshResult] = await Promise.allSettled([
+          getAccessToken(),
+          getPersistedRefreshToken(storage),
+        ]);
+
+        if (accessResult.status === "rejected") {
+          console.error("Access token retrieval failed:", accessResult.reason);
+          success = false;
+        }
+        if (refreshResult.status === "rejected") {
+          console.error("Refresh token retrieval failed:", refreshResult.reason);
+          success = false;
+        }
+
+        const currentAccess =
+          accessResult.status === "fulfilled" ? accessResult.value : null;
+        const currentRefresh =
+          refreshResult.status === "fulfilled" ? refreshResult.value : null;
 
         const revokePromises = [];
 
