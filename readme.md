@@ -67,7 +67,7 @@ export default function Authentication() {
   };
 
   const handleLogout = async () => {
-    await kinde.logout();
+    await kinde.logout({ revokeToken: true });
   };
 
   return !kinde.isAuthenticated ? (
