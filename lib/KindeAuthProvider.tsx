@@ -30,6 +30,8 @@ import {
   DiscoveryDocument,
   exchangeCodeAsync,
   makeRedirectUri,
+  revokeAsync,
+  TokenTypeHint,
 } from "expo-auth-session";
 import { openAuthSessionAsync, openBrowserAsync } from "expo-web-browser";
 import {
@@ -58,6 +60,7 @@ import {
   createSessionStorage,
   performRemoteLogout,
   persistRefreshToken,
+  getPersistedRefreshToken,
 } from "./storage";
 export const KindeAuthContext = createContext<KindeAuthHook | undefined>(
   undefined,
@@ -162,9 +165,13 @@ export const KindeAuthProvider = ({
   config: KindeAuthConfig;
   callbacks?: KindeCallbacks;
 }) => {
-  const domain = config.domain;
-  if (domain === undefined)
+  if (config.domain === undefined) {
     throw new Error("KindeAuthProvider config.domain prop is undefined");
+  }
+
+  const domain = config.domain.toLowerCase().startsWith("http://")
+    ? "https://" + config.domain.substring(7) // 7 is the length of "http://"
+    : config.domain;
 
   const clientId = config.clientId;
   if (clientId === undefined)
@@ -534,7 +541,7 @@ export const KindeAuthProvider = ({
    * @returns {Promise<LogoutResult>}
    */
   async function logout(
-    { revokeToken: _revokeToken }: Partial<LogoutRequest> = {},
+    { revokeToken }: Partial<LogoutRequest> = {},
     browserOptions?: KindeBrowserOptions,
   ): Promise<LogoutResult> {
     if (!storage) {
@@ -551,6 +558,77 @@ export const KindeAuthProvider = ({
 
     let success = true;
 
+    if (revokeToken && discovery?.revocationEndpoint) {
+      try {
+        const [accessResult, refreshResult] = await Promise.allSettled([
+          getAccessToken(),
+          getPersistedRefreshToken(storage),
+        ]);
+
+        if (accessResult.status === "rejected") {
+          console.error("Access token retrieval failed:", accessResult.reason);
+          success = false;
+        }
+        if (refreshResult.status === "rejected") {
+          console.error("Refresh token retrieval failed:", refreshResult.reason);
+          success = false;
+        }
+
+        const currentAccess =
+          accessResult.status === "fulfilled" ? accessResult.value : null;
+        const currentRefresh =
+          refreshResult.status === "fulfilled" ? refreshResult.value : null;
+
+        const revokePromises = [];
+
+        if (currentAccess) {
+          revokePromises.push(
+            revokeAsync(
+              {
+                clientId: config.clientId,
+                token: currentAccess,
+                tokenTypeHint: TokenTypeHint.AccessToken,
+              },
+              discovery,
+            ),
+          );
+        }
+
+        if (currentRefresh) {
+          revokePromises.push(
+            revokeAsync(
+              {
+                clientId: config.clientId,
+                token: currentRefresh,
+                tokenTypeHint: TokenTypeHint.RefreshToken,
+              },
+              discovery,
+            ),
+          );
+        }
+
+        if (revokePromises.length > 0) {
+          const results = await Promise.allSettled(revokePromises);
+          for (const result of results) {
+            if (result.status === "rejected") {
+              console.error("Token revocation failed:", result.reason);
+              success = false;
+            }
+          }
+        }
+      } catch (err: unknown) {
+        console.error(err);
+        success = false;
+      }
+    }
+
+    try {
+      await cleanup();
+    } catch (err: unknown) {
+      console.error(err);
+      success = false;
+    }
+
     try {
       await performRemoteLogout({
         discovery,
@@ -562,13 +640,6 @@ export const KindeAuthProvider = ({
         openAuthSession: async (url, authRedirectUri, options) =>
           openAuthSessionAsync(url, authRedirectUri, options),
       });
-    } catch (err: unknown) {
-      console.error(err);
-      success = false;
-    }
-
-    try {
-      await cleanup();
     } catch (err: unknown) {
       console.error(err);
       success = false;
