@@ -570,7 +570,10 @@ export const KindeAuthProvider = ({
           success = false;
         }
         if (refreshResult.status === "rejected") {
-          console.error("Refresh token retrieval failed:", refreshResult.reason);
+          console.error(
+            "Refresh token retrieval failed:",
+            refreshResult.reason,
+          );
           success = false;
         }
 
