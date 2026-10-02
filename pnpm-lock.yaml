@@ -177,7 +177,7 @@ importers:
         version: 0.4.5
       '@vitejs/plugin-react':
         specifier: ^6.0.1
-        version: 6.1.1(babel-plugin-react-compiler@1.0.0)(vite@8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
+        version: 6.1.1(babel-plugin-react-compiler@1.0.0)(vite@8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
       base-64:
         specifier: ^1.0.0
         version: 1.0.0
@@ -238,13 +238,13 @@ importers:
         version: 6.0.3
       vite:
         specifier: ^8.0.3
-        version: 8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)
+        version: 8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)
       vite-plugin-dts:
         specifier: ^5.0.0
-        version: 5.1.0(rolldown@1.2.9)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
+        version: 5.1.0(rolldown@1.2.9)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
       vitest:
         specifier: ^5.0.0
-        version: 5.0.2(@types/node@24.13.3)(@vitest/coverage-v8@5.0.2)(vite@8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
+        version: 5.0.2(@types/node@24.13.3)(@vitest/coverage-v8@5.0.2)(vite@8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
 
 packages:
 
@@ -3346,8 +3346,8 @@ packages:
       vite:
         optional: true
 
-  vite@8.3.0:
-    resolution: {integrity: sha512-lhZBVvEHefgE+HQZC9O7EBJgCU/nVzFNl7vkS4RE0APtWLP02/8QVIkQtzBxPquh7lq5/78NHipTj7ODQ6XuyQ==}
+  vite@8.3.1:
+    resolution: {integrity: sha512-/bvH9E9tmCXRGp2uXY3WbOldqpTwFkbha/8ANaEQ6VkxhH60KyqLwgZq6lG2y+4uT55x9+9eUHMpQ7uGnOCKjA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -4785,10 +4785,10 @@ snapshots:
 
   '@ungap/structured-clone@1.3.3': {}
 
-  '@vitejs/plugin-react@6.1.1(babel-plugin-react-compiler@1.0.0)(vite@8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))':
+  '@vitejs/plugin-react@6.1.1(babel-plugin-react-compiler@1.0.0)(vite@8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: 8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)
+      vite: 8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)
     optionalDependencies:
       babel-plugin-react-compiler: 1.0.0
 
@@ -4802,7 +4802,7 @@ snapshots:
       obug: 2.2.1
       std-env: 4.2.0
       tinyrainbow: 3.1.1
-      vitest: 5.0.2(@types/node@24.13.3)(@vitest/coverage-v8@5.0.2)(vite@8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
+      vitest: 5.0.2(@types/node@24.13.3)(@vitest/coverage-v8@5.0.2)(vite@8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
 
   '@vitest/istanbul-lib-coverage@1.0.2': {}
 
@@ -4810,14 +4810,14 @@ snapshots:
     dependencies:
       '@vitest/istanbul-lib-coverage': 1.0.2
 
-  '@vitest/mocker@5.0.2(vite@8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))':
+  '@vitest/mocker@5.0.2(vite@8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@vitest/spy': 5.0.2
       estree-walker: 3.0.3
       magic-string: 1.4.2
     optionalDependencies:
-      vite: 8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)
+      vite: 8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)
 
   '@vitest/spy@5.0.2': {}
 
@@ -7366,7 +7366,7 @@ snapshots:
 
   unpipe@1.0.0: {}
 
-  unplugin-dts@1.1.0(rolldown@1.2.9)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)):
+  unplugin-dts@1.1.0(rolldown@1.2.9)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)):
     dependencies:
       '@rollup/pluginutils': 5.4.0
       '@volar/typescript': 2.4.28(typescript@6.0.3)
@@ -7380,7 +7380,7 @@ snapshots:
       unplugin: 2.3.11
     optionalDependencies:
       rolldown: 1.2.9
-      vite: 8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)
+      vite: 8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -7409,11 +7409,11 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vite-plugin-dts@5.1.0(rolldown@1.2.9)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)):
+  vite-plugin-dts@5.1.0(rolldown@1.2.9)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)):
     dependencies:
-      unplugin-dts: 1.1.0(rolldown@1.2.9)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
+      unplugin-dts: 1.1.0(rolldown@1.2.9)(supports-color@8.1.1)(typescript@6.0.3)(vite@8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
     optionalDependencies:
-      vite: 8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)
+      vite: 8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)
     transitivePeerDependencies:
       - '@rspack/core'
       - '@vue/language-core'
@@ -7423,7 +7423,7 @@ snapshots:
       - typescript
       - webpack
 
-  vite@8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0):
+  vite@8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0):
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7
@@ -7436,10 +7436,10 @@ snapshots:
       terser: 5.49.2
       yaml: 2.9.0
 
-  vitest@5.0.2(@types/node@24.13.3)(@vitest/coverage-v8@5.0.2)(vite@8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)):
+  vitest@5.0.2(@types/node@24.13.3)(@vitest/coverage-v8@5.0.2)(vite@8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)):
     dependencies:
       '@types/chai': 5.2.3
-      '@vitest/mocker': 5.0.2(vite@8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
+      '@vitest/mocker': 5.0.2(vite@8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0))
       chai: 6.2.2
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
@@ -7450,7 +7450,7 @@ snapshots:
       tinybench: 6.2.0
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
-      vite: 8.3.0(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)
+      vite: 8.3.1(@types/node@24.13.3)(terser@5.49.2)(yaml@2.9.0)
       why-is-node-running: 3.2.2
     optionalDependencies:
       '@types/node': 24.13.3
