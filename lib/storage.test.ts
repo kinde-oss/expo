@@ -204,18 +204,20 @@ describe("storage helpers", () => {
 
   it("retrieves from insecure storage when useInsecureForRefreshToken is true and insecure storage exists", async () => {
     const { localStorage } = installLocalStorageStub();
-    
+
     const primaryStorage = await createSessionStorage({
       platformOS: "web",
       windowObject: { localStorage },
     });
-    
+
     storageSettings.useInsecureForRefreshToken = true;
     const insecureStorage = getInsecureStorage()!;
 
-    const primarySpy = vi.spyOn(primaryStorage, "getSessionItem")
+    const primarySpy = vi
+      .spyOn(primaryStorage, "getSessionItem")
       .mockResolvedValue("FAKE_PRIMARY_TOKEN");
-    const insecureSpy = vi.spyOn(insecureStorage, "getSessionItem")
+    const insecureSpy = vi
+      .spyOn(insecureStorage, "getSessionItem")
       .mockResolvedValue("FAKE_INSECURE_TOKEN");
 
     const retrievedToken = await getPersistedRefreshToken(primaryStorage);
@@ -227,18 +229,20 @@ describe("storage helpers", () => {
 
   it("retrieves from active storage when useInsecureForRefreshToken is false", async () => {
     const { localStorage } = installLocalStorageStub();
-    
+
     const primaryStorage = await createSessionStorage({
       platformOS: "web",
       windowObject: { localStorage },
     });
-    
+
     storageSettings.useInsecureForRefreshToken = false;
     const insecureStorage = getInsecureStorage()!;
 
-    const primarySpy = vi.spyOn(primaryStorage, "getSessionItem")
+    const primarySpy = vi
+      .spyOn(primaryStorage, "getSessionItem")
       .mockResolvedValue("FAKE_PRIMARY_TOKEN");
-    const insecureSpy = vi.spyOn(insecureStorage, "getSessionItem")
+    const insecureSpy = vi
+      .spyOn(insecureStorage, "getSessionItem")
       .mockResolvedValue("FAKE_INSECURE_TOKEN");
 
     const retrievedToken = await getPersistedRefreshToken(primaryStorage);
@@ -252,12 +256,13 @@ describe("storage helpers", () => {
     const primaryStorage = await createSessionStorage({
       platformOS: "ios",
     });
-    
+
     storageSettings.useInsecureForRefreshToken = true;
-    
+
     expect(getInsecureStorage()).toBeNull();
 
-    const primarySpy = vi.spyOn(primaryStorage, "getSessionItem")
+    const primarySpy = vi
+      .spyOn(primaryStorage, "getSessionItem")
       .mockResolvedValue("FAKE_PRIMARY_TOKEN");
 
     const retrievedToken = await getPersistedRefreshToken(primaryStorage);
