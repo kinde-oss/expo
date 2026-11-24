@@ -7,6 +7,7 @@ import {
   LogoutRequest,
   UserProfile,
   KindeBrowserOptions,
+  StepUpOptions,
 } from "./types";
 import {
   LoginMethodParams,
@@ -15,6 +16,8 @@ import {
   RefreshType,
   RefreshTokenResult,
   PortalPage,
+  AuthenticationContext,
+  AuthenticationContextRequirement,
 } from "@kinde/js-utils";
 import { KindeAuthContext } from "./KindeAuthProvider";
 import { JWTDecoded } from "@kinde/jwt-decoder";
@@ -28,6 +31,15 @@ export interface KindeAuthHook {
     options?: Partial<LoginMethodParams>,
     browserOptions?: KindeBrowserOptions,
   ) => Promise<LoginResponse>;
+  stepUp: (
+    options: StepUpOptions,
+    browserOptions?: KindeBrowserOptions,
+  ) => Promise<LoginResponse>;
+  getAuthenticationContext: () => Promise<AuthenticationContext | null>;
+  hasAuthenticationContext: (
+    requirement: AuthenticationContextRequirement,
+  ) => Promise<boolean>;
+  isStepUpSupported: () => Promise<boolean>;
   switchOrg: (
     orgCode: OrgCode,
     options?: { redirectURL?: string },

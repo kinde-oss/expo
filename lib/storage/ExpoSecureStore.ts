@@ -69,7 +69,7 @@ export class ExpoSecureStore<
       itemValue,
       Math.min(storageSettings.maxLength, 2048),
     );
-    await Promise.all(
+    const writes = await Promise.allSettled(
       chunks.map((splitValue, index) =>
         expoSecureStore!.setItemAsync(
           `${storageSettings.keyPrefix}${itemKey}${index}`,
@@ -86,6 +86,10 @@ export class ExpoSecureStore<
         ),
       ),
     );
+    const failedWrite = writes.find((write) => write.status === "rejected");
+    if (failedWrite) {
+      throw failedWrite.reason;
+    }
     this.notifyListeners();
   }
 

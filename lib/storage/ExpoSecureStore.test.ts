@@ -115,6 +115,38 @@ describe("ExpoSecureStore", () => {
     );
   });
 
+  it("waits for pending chunk writes before reporting a write failure", async () => {
+    const store = new ExpoSecureStore();
+    const chunkSize = Math.min(storageSettings.maxLength, 2048);
+    const error = new Error("Chunk write failed");
+    let finishSecondWrite!: () => void;
+    const secondWrite = new Promise<void>((resolve) => {
+      finishSecondWrite = resolve;
+    });
+    mockedSecureStore.getItemAsync.mockResolvedValueOnce(null);
+    mockedSecureStore.setItemAsync
+      .mockRejectedValueOnce(error)
+      .mockReturnValueOnce(secondWrite);
+
+    const write = store.setSessionItem(
+      StorageKeys.accessToken,
+      "a".repeat(chunkSize + 1),
+    );
+    const onSettled = vi.fn();
+    void write.then(onSettled, onSettled);
+
+    try {
+      await vi.waitFor(() => {
+        expect(mockedSecureStore.setItemAsync).toHaveBeenCalledTimes(2);
+      });
+      expect(onSettled).not.toHaveBeenCalled();
+    } finally {
+      finishSecondWrite();
+    }
+
+    await expect(write).rejects.toBe(error);
+  });
+
   it("preserves empty-string chunks when reading and deleting", async () => {
     const store = new ExpoSecureStore();
 

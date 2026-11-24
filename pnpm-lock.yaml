@@ -6,6 +6,9 @@ importers:
   .:
     configDependencies: {}
     packageManagerDependencies:
+      '@pnpm/exe':
+        specifier: 12.18.0
+        version: 12.18.0
       pnpm:
         specifier: 12.18.0
         version: 12.18.0
@@ -89,6 +92,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@pnpm/exe@12.18.0':
+    resolution: {integrity: sha512-3t/p83vw9SXsJML6suMBThCtwCl4lUGp/ILcxECU1In+G+NmFwMV9D+2TcvU7kX8tbrHRoYhs3eOPepEVdD7tQ==}
+    engines: {node: '>=18'}
+    hasBin: true
+
   pnpm@12.18.0:
     resolution: {integrity: sha512-nXiC1dyCFH7PxOBiqjSDTgrQKWcQoYN6ERWuASEn02txCeMhrBWYod0KZVl2gbHpmRfhLtDXSerpEYeUM2O+sw==}
     engines: {node: '>=18'}
@@ -138,6 +146,23 @@ snapshots:
   '@pnpm/exe.win32-x64@12.18.0':
     optional: true
 
+  '@pnpm/exe@12.18.0':
+    optionalDependencies:
+      '@pnpm/exe.android-arm64': 12.18.0
+      '@pnpm/exe.android-x64': 12.18.0
+      '@pnpm/exe.darwin-arm64': 12.18.0
+      '@pnpm/exe.darwin-x64': 12.18.0
+      '@pnpm/exe.freebsd-x64': 12.18.0
+      '@pnpm/exe.linux-arm64': 12.18.0
+      '@pnpm/exe.linux-arm64-musl': 12.18.0
+      '@pnpm/exe.linux-ppc64': 12.18.0
+      '@pnpm/exe.linux-riscv64': 12.18.0
+      '@pnpm/exe.linux-s390x': 12.18.0
+      '@pnpm/exe.linux-x64': 12.18.0
+      '@pnpm/exe.linux-x64-musl': 12.18.0
+      '@pnpm/exe.win32-arm64': 12.18.0
+      '@pnpm/exe.win32-x64': 12.18.0
+
   pnpm@12.18.0:
     optionalDependencies:
       '@pnpm/exe.android-arm64': 12.18.0
@@ -167,8 +192,8 @@ importers:
   .:
     dependencies:
       '@kinde/js-utils':
-        specifier: 0.32.1
-        version: 0.32.1
+        specifier: 0.33.0
+        version: 0.33.0
       '@kinde/jwt-decoder':
         specifier: ^0.2.0
         version: 0.2.5
@@ -857,8 +882,8 @@ packages:
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
 
-  '@kinde/js-utils@0.32.1':
-    resolution: {integrity: sha512-sh65zgj+pvc0K38zF1FytRQOpkzJy2qmth0u+vSzgbcLdCDYfEpswcnnbqqiwK6CXIkAMGiOlQGe5wPLpNoHfw==}
+  '@kinde/js-utils@0.33.0':
+    resolution: {integrity: sha512-Jd1xEX9CjydOCx2SK5uE4KYc/WOy3/cM2E9wNxXdyBB6MgPgsb26fHg2ZcY8PKxNEdNhCNGe1YR/X0GMvbXC2A==}
 
   '@kinde/jwt-decoder@0.2.5':
     resolution: {integrity: sha512-du2JjKb560YJCwM1chjkpZBbg6q3v2RX1JfT1Dbhl0QjrmKsWFTZvFja34rdjacps0CjdA4nE3XHPzMDejbg5g==}
@@ -1876,6 +1901,7 @@ packages:
     resolution: {integrity: sha512-sVgXaMjh5uapBvBkik3QibxbKI2g1zNtNeHntjRfixWAI3tlQZbaK4ACdInY4+jUBVymkf8u9BXJUaSes9jdtA==}
     hasBin: true
     peerDependencies:
+      '@expo/dom-webview': '*'
       '@expo/metro-runtime': '*'
       react: '*'
       react-dom: '*'
@@ -1883,6 +1909,8 @@ packages:
       react-native-web: '*'
       react-native-webview: '*'
     peerDependenciesMeta:
+      '@expo/dom-webview':
+        optional: true
       '@expo/metro-runtime':
         optional: true
       react-dom:
@@ -4475,7 +4503,7 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@kinde/js-utils@0.32.1':
+  '@kinde/js-utils@0.33.0':
     dependencies:
       '@kinde/jwt-decoder': 0.2.5
 

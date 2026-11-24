@@ -1,3 +1,8 @@
+import type { AcrValue, LoginMethodParams } from "@kinde/js-utils";
+
+export type StepUpOptions = Partial<LoginMethodParams> &
+  ({ acr: AcrValue; maxAge?: number } | { acr?: AcrValue; maxAge: number });
+
 export type LoginSuccessResponse = {
   success: true;
   accessToken: string;
