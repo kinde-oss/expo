@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, expectTypeOf } from "vitest";
+
 import type {
   LoginSuccessResponse,
   LoginFailureResponse,
@@ -8,9 +9,28 @@ import type {
   PermissionAccess,
   Permissions,
   UserProfile,
+  StepUpOptions,
 } from "./types";
 
 describe("types", () => {
+  describe("StepUpOptions", () => {
+    it("should require acr or maxAge and accept regular login options", () => {
+      expectTypeOf<{ acr: "mfa" }>().toExtend<StepUpOptions>();
+      expectTypeOf<{ maxAge: 0 }>().toExtend<StepUpOptions>();
+      expectTypeOf<{
+        acr: "phr";
+        maxAge: 300;
+        redirectURL: string;
+        orgCode: string;
+        loginHint: string;
+      }>().toExtend<StepUpOptions>();
+      expectTypeOf<{}>().not.toExtend<StepUpOptions>();
+      expectTypeOf<{
+        acrValues: ["mfa", "phr"];
+      }>().not.toExtend<StepUpOptions>();
+    });
+  });
+
   describe("LoginSuccessResponse", () => {
     it("should match the expected shape", () => {
       const response: LoginSuccessResponse = {
