@@ -37,6 +37,7 @@ import {
   revokeAsync,
   TokenTypeHint,
 } from "expo-auth-session";
+import { randomUUID } from "expo-crypto";
 import { openAuthSessionAsync, openBrowserAsync } from "expo-web-browser";
 import {
   createContext,
@@ -289,6 +290,7 @@ export const KindeAuthProvider = ({
         scope: scopes as LoginMethodParams["scope"],
         hasSuccessPage: true,
         state: expoRequest.state,
+        nonce: randomUUID(),
         codeChallenge: expoRequest.codeChallenge,
         codeChallengeMethod: expoRequest.codeChallengeMethod,
       });

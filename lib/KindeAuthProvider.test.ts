@@ -108,6 +108,7 @@ const mocked = vi.hoisted(() => ({
     (_options: Partial<LoginMethodParams>) => ({}),
   ),
   maybeCompleteAuthSession: vi.fn(),
+  randomUUID: vi.fn(() => "2e53b83c-a7ad-4d7f-a83c-df251f9f721e"),
   promptAsync: vi.fn(
     async (
       _discovery: unknown,
@@ -192,6 +193,8 @@ vi.mock("expo-auth-session", () => ({
     RefreshToken: "refresh_token",
   },
 }));
+
+vi.mock("expo-crypto", () => ({ randomUUID: mocked.randomUUID }));
 
 vi.mock("expo-web-browser", () => ({
   maybeCompleteAuthSession: mocked.maybeCompleteAuthSession,
@@ -796,7 +799,7 @@ describe("KindeAuthProvider step-up consumer API", () => {
     expect(mocked.isStepUpSupported).toHaveBeenCalledWith(domain);
   });
 
-  it("builds the step-up URL with provider settings, acr, maxAge zero, and Expo state and PKCE", async () => {
+  it("builds the step-up URL with provider settings and Expo state, nonce, and PKCE", async () => {
     const { auth } = await createProvider(undefined, {
       domain: "https://tenant.kinde.com",
       clientId: "step-up-client",
@@ -821,6 +824,7 @@ describe("KindeAuthProvider step-up consumer API", () => {
       extraParams: { has_success_page: "true" },
     });
     expect(mocked.getAuthRequestConfigAsync).toHaveBeenCalledTimes(1);
+    expect(mocked.randomUUID).toHaveBeenCalledTimes(1);
     expect(mocked.stepUp).toHaveBeenCalledTimes(1);
     expect(mocked.stepUp).toHaveBeenCalledWith("https://tenant.kinde.com", {
       ...options,
@@ -828,6 +832,7 @@ describe("KindeAuthProvider step-up consumer API", () => {
       scope: ["openid", "profile", "email"],
       hasSuccessPage: true,
       state: "expo-state",
+      nonce: "2e53b83c-a7ad-4d7f-a83c-df251f9f721e",
       codeChallenge: "expo-challenge",
       codeChallengeMethod: "S256",
     });
@@ -1019,6 +1024,7 @@ describe("KindeAuthProvider step-up consumer API", () => {
       });
 
       expect(mocked.getAuthRequestConfigAsync).not.toHaveBeenCalled();
+      expect(mocked.randomUUID).not.toHaveBeenCalled();
       expect(mocked.stepUp).not.toHaveBeenCalled();
       expect(mocked.promptAsync).toHaveBeenCalledTimes(1);
       expect(mocked.promptAsync).toHaveBeenCalledWith(

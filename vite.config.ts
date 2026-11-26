@@ -28,6 +28,7 @@ export default defineConfig({
         "react-native",
         "expo-auth-session",
         "expo-constants",
+        "expo-crypto",
         "expo-secure-store",
         "expo-web-browser",
         "@kinde/jwt-validator",
